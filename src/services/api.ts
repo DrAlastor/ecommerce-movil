@@ -2,7 +2,7 @@ import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // URL base del backend en Azure (accesible sin necesidad de cable o localhost)
-const API_BASE_URL = 'https://dressly-api-2026.azurewebsites.net/api';
+const API_BASE_URL = 'https://dressly-api-2026.azurewebsites.net';
 
 const api = axios.create({
   baseURL: API_BASE_URL,
