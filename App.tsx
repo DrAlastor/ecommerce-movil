@@ -17,8 +17,8 @@ import {
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { AuthProvider, useAuth } from './src/modules/users-security/AuthContext';
-import LoginScreen from './src/modules/users-security/LoginScreen';
+import { AuthProvider, useAuth } from './src/modules/users-security/shared/AuthContext';
+import LoginScreen from './src/modules/users-security/use-cases/CU01-iniciar-sesion/screens/LoginScreen';
 
 // Tipos para las rutas
 type RootStackParamList = {
@@ -28,105 +28,7 @@ type RootStackParamList = {
 
 const RootStack = createNativeStackNavigator<RootStackParamList>();
 
-// Pantalla placeholder del catálogo/home del cliente
-function HomeScreen({ navigation }: any) {
-  const { logout, user, rol, isAuthenticated } = useAuth();
-
-  return (
-    <View style={homeStyles.container}>
-      <View style={homeStyles.content}>
-        <Image source={require('./src/assets/logo.png')} style={homeStyles.logoImage} resizeMode="contain" />
-        
-        <View style={homeStyles.divider} />
-        
-        {isAuthenticated ? (
-          <>
-            <Text style={homeStyles.welcome}>
-              ¡Bienvenido, {user?.email}!
-            </Text>
-            <Text style={homeStyles.role}>
-              Rol: {rol?.nombre || 'Cliente'}
-            </Text>
-            <TouchableOpacity
-              style={homeStyles.logoutButton}
-              onPress={logout}
-              activeOpacity={0.8}
-            >
-              <Text style={homeStyles.logoutText}>Cerrar sesión</Text>
-            </TouchableOpacity>
-          </>
-        ) : (
-          <>
-            <Text style={homeStyles.welcome}>
-              ¡Bienvenido a Dressly!
-            </Text>
-            <Text style={homeStyles.role}>
-              Explora nuestra nueva colección
-            </Text>
-            <TouchableOpacity
-              style={homeStyles.loginButton}
-              onPress={() => navigation.navigate('Login')}
-              activeOpacity={0.8}
-            >
-              <Text style={homeStyles.logoutText}>Iniciar sesión</Text>
-            </TouchableOpacity>
-          </>
-        )}
-      </View>
-    </View>
-  );
-}
-
-const homeStyles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#F8F5F1',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  content: {
-    alignItems: 'center',
-    padding: 32,
-  },
-  logoImage: {
-    width: 200,
-    height: 120,
-    marginBottom: 20,
-  },
-  divider: {
-    width: 40,
-    height: 2,
-    backgroundColor: '#C4956A',
-    marginBottom: 24,
-  },
-  welcome: {
-    fontSize: 16,
-    color: '#1A1A1A',
-    marginBottom: 4,
-  },
-  role: {
-    fontSize: 14,
-    color: '#6B6B6B',
-    marginBottom: 32,
-  },
-  logoutButton: {
-    backgroundColor: '#1A1A1A',
-    paddingHorizontal: 32,
-    paddingVertical: 14,
-    borderRadius: 8,
-  },
-  loginButton: {
-    backgroundColor: '#C4956A',
-    paddingHorizontal: 32,
-    paddingVertical: 14,
-    borderRadius: 8,
-  },
-  logoutText: {
-    color: '#FFFFFF',
-    fontSize: 15,
-    fontWeight: '500',
-  },
-});
+import CatalogScreen from './src/modules/catalog/use-cases/CU10-consultar-catalogo-productos/screens/CatalogScreen';
 
 // Pantalla de carga
 function LoadingScreen() {
@@ -169,7 +71,7 @@ function RootNavigator() {
 
   return (
     <RootStack.Navigator screenOptions={{ headerShown: false }}>
-      <RootStack.Screen name="Home" component={HomeScreen} />
+      <RootStack.Screen name="Home" component={CatalogScreen} />
       {!isAuthenticated && (
         <RootStack.Screen name="Login" component={LoginScreen} />
       )}

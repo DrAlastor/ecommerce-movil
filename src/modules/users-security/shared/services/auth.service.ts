@@ -1,6 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import api from '../../services/api';
-import type { LoginRequest, LoginResponse } from './auth.types';
+import api from '../../../../services/api';
+import type { LoginRequest, LoginResponse } from '../types/auth.types';
 
 export const authService = {
   async login(credentials: LoginRequest): Promise<LoginResponse> {

@@ -6,8 +6,8 @@ import React, {
   useMemo,
   useState,
 } from 'react';
-import { authService } from './auth.service';
-import type { AuthState, LoginRequest } from './auth.types';
+import { authService } from './services/auth.service';
+import type { AuthState, LoginRequest } from './types/auth.types';
 
 interface AuthContextType extends AuthState {
   login: (credentials: LoginRequest) => Promise<void>;
