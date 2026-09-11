@@ -12,6 +12,7 @@ import {
   TouchableOpacity,
   View,
   useColorScheme,
+  Image,
 } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { NavigationContainer } from '@react-navigation/native';
@@ -20,40 +21,57 @@ import { AuthProvider, useAuth } from './src/modules/users-security/AuthContext'
 import LoginScreen from './src/modules/users-security/LoginScreen';
 
 // Tipos para las rutas
-type AuthStackParamList = {
+type RootStackParamList = {
+  Home: undefined;
   Login: undefined;
 };
 
-type AppStackParamList = {
-  Home: undefined;
-};
-
-const AuthStack = createNativeStackNavigator<AuthStackParamList>();
-const AppStack = createNativeStackNavigator<AppStackParamList>();
+const RootStack = createNativeStackNavigator<RootStackParamList>();
 
 // Pantalla placeholder del catálogo/home del cliente
-function HomeScreen() {
-  const { logout, user, rol } = useAuth();
+function HomeScreen({ navigation }: any) {
+  const { logout, user, rol, isAuthenticated } = useAuth();
 
   return (
     <View style={homeStyles.container}>
       <View style={homeStyles.content}>
-        <Text style={homeStyles.logo}>Dressly</Text>
-        <Text style={homeStyles.subtitle}>FASHION STORE</Text>
+        <Image source={require('./src/assets/logo.png')} style={homeStyles.logoImage} resizeMode="contain" />
+        
         <View style={homeStyles.divider} />
-        <Text style={homeStyles.welcome}>
-          ¡Bienvenido, {user?.email}!
-        </Text>
-        <Text style={homeStyles.role}>
-          Rol: {rol?.nombre}
-        </Text>
-        <TouchableOpacity
-          style={homeStyles.logoutButton}
-          onPress={logout}
-          activeOpacity={0.8}
-        >
-          <Text style={homeStyles.logoutText}>Cerrar sesión</Text>
-        </TouchableOpacity>
+        
+        {isAuthenticated ? (
+          <>
+            <Text style={homeStyles.welcome}>
+              ¡Bienvenido, {user?.email}!
+            </Text>
+            <Text style={homeStyles.role}>
+              Rol: {rol?.nombre || 'Cliente'}
+            </Text>
+            <TouchableOpacity
+              style={homeStyles.logoutButton}
+              onPress={logout}
+              activeOpacity={0.8}
+            >
+              <Text style={homeStyles.logoutText}>Cerrar sesión</Text>
+            </TouchableOpacity>
+          </>
+        ) : (
+          <>
+            <Text style={homeStyles.welcome}>
+              ¡Bienvenido a Dressly!
+            </Text>
+            <Text style={homeStyles.role}>
+              Explora nuestra nueva colección
+            </Text>
+            <TouchableOpacity
+              style={homeStyles.loginButton}
+              onPress={() => navigation.navigate('Login')}
+              activeOpacity={0.8}
+            >
+              <Text style={homeStyles.logoutText}>Iniciar sesión</Text>
+            </TouchableOpacity>
+          </>
+        )}
       </View>
     </View>
   );
@@ -70,20 +88,10 @@ const homeStyles = StyleSheet.create({
     alignItems: 'center',
     padding: 32,
   },
-  logo: {
-    fontFamily: 'serif',
-    fontSize: 36,
-    fontWeight: '700',
-    color: '#1A1A1A',
-    letterSpacing: 2,
-    textTransform: 'uppercase',
-  },
-  subtitle: {
-    fontSize: 11,
-    color: '#9B9B9B',
-    letterSpacing: 4,
-    marginTop: 2,
-    marginBottom: 24,
+  logoImage: {
+    width: 200,
+    height: 120,
+    marginBottom: 20,
   },
   divider: {
     width: 40,
@@ -107,6 +115,12 @@ const homeStyles = StyleSheet.create({
     paddingVertical: 14,
     borderRadius: 8,
   },
+  loginButton: {
+    backgroundColor: '#C4956A',
+    paddingHorizontal: 32,
+    paddingVertical: 14,
+    borderRadius: 8,
+  },
   logoutText: {
     color: '#FFFFFF',
     fontSize: 15,
@@ -118,7 +132,7 @@ const homeStyles = StyleSheet.create({
 function LoadingScreen() {
   return (
     <View style={loadingStyles.container}>
-      <Text style={loadingStyles.logo}>Dressly</Text>
+      <Image source={require('./src/assets/logo.png')} style={loadingStyles.logoImage} resizeMode="contain" />
       <ActivityIndicator
         size="large"
         color="#1A1A1A"
@@ -135,13 +149,9 @@ const loadingStyles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  logo: {
-    fontFamily: 'serif',
-    fontSize: 32,
-    fontWeight: '700',
-    color: '#1A1A1A',
-    letterSpacing: 2,
-    textTransform: 'uppercase',
+  logoImage: {
+    width: 160,
+    height: 100,
     marginBottom: 20,
   },
   spinner: {
@@ -157,18 +167,13 @@ function RootNavigator() {
     return <LoadingScreen />;
   }
 
-  if (!isAuthenticated) {
-    return (
-      <AuthStack.Navigator screenOptions={{ headerShown: false }}>
-        <AuthStack.Screen name="Login" component={LoginScreen} />
-      </AuthStack.Navigator>
-    );
-  }
-
   return (
-    <AppStack.Navigator screenOptions={{ headerShown: false }}>
-      <AppStack.Screen name="Home" component={HomeScreen} />
-    </AppStack.Navigator>
+    <RootStack.Navigator screenOptions={{ headerShown: false }}>
+      <RootStack.Screen name="Home" component={HomeScreen} />
+      {!isAuthenticated && (
+        <RootStack.Screen name="Login" component={LoginScreen} />
+      )}
+    </RootStack.Navigator>
   );
 }
 

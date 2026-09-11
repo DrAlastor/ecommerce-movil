@@ -9,13 +9,14 @@ import {
   Platform,
   ScrollView,
   ActivityIndicator,
+  Image,
 } from 'react-native';
 import { useAuth } from './AuthContext';
 import type { AxiosError } from 'axios';
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-export default function LoginScreen() {
+export default function LoginScreen({ navigation }: any) {
   const { login } = useAuth();
 
   const [email, setEmail] = useState('');
@@ -111,10 +112,18 @@ export default function LoginScreen() {
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
+        {/* Botón volver atrás */}
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => navigation.navigate('Home')}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+        >
+          <Text style={styles.backButtonText}>← Volver al inicio</Text>
+        </TouchableOpacity>
+
         {/* Logo */}
         <View style={styles.logoContainer}>
-          <Text style={styles.logoText}>Dressly</Text>
-          <Text style={styles.logoSubtext}>FASHION STORE</Text>
+          <Image source={require('../../assets/logo.png')} style={styles.logoImage} resizeMode="contain" />
         </View>
 
         {/* Header */}
@@ -276,20 +285,18 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 40,
   },
-  logoText: {
-    fontFamily: Platform.OS === 'ios' ? 'Georgia' : 'serif',
-    fontSize: 36,
-    fontWeight: '700',
-    color: '#1A1A1A',
-    letterSpacing: 2,
-    textTransform: 'uppercase',
+  logoImage: {
+    width: 200,
+    height: 120,
   },
-  logoSubtext: {
-    fontSize: 11,
-    color: '#9B9B9B',
-    letterSpacing: 4,
-    textTransform: 'uppercase',
-    marginTop: 2,
+  backButton: {
+    alignSelf: 'flex-start',
+    marginBottom: 20,
+  },
+  backButtonText: {
+    color: '#6B6B6B',
+    fontSize: 14,
+    fontWeight: '500',
   },
   headerContainer: {
     marginBottom: 28,
