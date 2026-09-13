@@ -1,7 +1,7 @@
 /**
  * Dressly Fashion Store — Mobile App
- * Módulo: Usuarios y Seguridad (CU01)
  */
+import 'react-native-gesture-handler';
 
 import React from 'react';
 import {
@@ -17,18 +17,34 @@ import {
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
+
 import { AuthProvider, useAuth } from './src/modules/users-security/shared/AuthContext';
+import { ShopProvider } from './src/shared/context/ShopContext';
+import AdminNavigator from './src/shared/layouts/AdminNavigator';
+
+// Screens
 import LoginScreen from './src/modules/users-security/use-cases/CU01-iniciar-sesion/screens/LoginScreen';
+import RegisterScreen from './src/modules/users-security/use-cases/CU03-gestionar-perfil/screens/RegisterScreen';
+import ProfileScreen from './src/modules/users-security/use-cases/CU03-gestionar-perfil/screens/ProfileScreen';
+import ForgotPasswordScreen from './src/modules/users-security/use-cases/CU04-gestionar-contrasena/screens/ForgotPasswordScreen';
+import ResetPasswordScreen from './src/modules/users-security/use-cases/CU04-gestionar-contrasena/screens/ResetPasswordScreen';
+import CatalogScreen from './src/modules/catalog/use-cases/CU10-consultar-catalogo-productos/screens/CatalogScreen';
+import CartScreen from './src/modules/shop/use-cases/CU11-gestionar-carrito/screens/CartScreen';
+import WishlistScreen from './src/modules/shop/use-cases/CU12-lista-deseos/screens/WishlistScreen';
 
 // Tipos para las rutas
 type RootStackParamList = {
   Home: undefined;
   Login: undefined;
+  Register: undefined;
+  Profile: undefined;
+  Cart: undefined;
+  Wishlist: undefined;
+  ForgotPassword: undefined;
+  ResetPassword: undefined;
 };
 
 const RootStack = createNativeStackNavigator<RootStackParamList>();
-
-import CatalogScreen from './src/modules/catalog/use-cases/CU10-consultar-catalogo-productos/screens/CatalogScreen';
 
 // Pantalla de carga
 function LoadingScreen() {
@@ -61,19 +77,33 @@ const loadingStyles = StyleSheet.create({
   },
 });
 
-// Navegación basada en estado de autenticación
+// Navegación principal
 function RootNavigator() {
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, isLoading, rol } = useAuth();
 
   if (isLoading) {
     return <LoadingScreen />;
   }
 
+  // Si está autenticado y NO es cliente, mostramos el Panel de Administración (Drawer)
+  if (isAuthenticated && rol?.nombre && rol.nombre !== 'Cliente') {
+    return <AdminNavigator />;
+  }
+
+  // Flujo normal para clientes o usuarios no autenticados
   return (
     <RootStack.Navigator screenOptions={{ headerShown: false }}>
       <RootStack.Screen name="Home" component={CatalogScreen} />
+      <RootStack.Screen name="Cart" component={CartScreen} />
+      <RootStack.Screen name="Wishlist" component={WishlistScreen} />
+      <RootStack.Screen name="Profile" component={ProfileScreen} />
       {!isAuthenticated && (
-        <RootStack.Screen name="Login" component={LoginScreen} />
+        <>
+          <RootStack.Screen name="Login" component={LoginScreen} />
+          <RootStack.Screen name="Register" component={RegisterScreen} />
+          <RootStack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
+          <RootStack.Screen name="ResetPassword" component={ResetPasswordScreen} />
+        </>
       )}
     </RootStack.Navigator>
   );
@@ -86,9 +116,11 @@ function App() {
     <SafeAreaProvider>
       <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} />
       <AuthProvider>
-        <NavigationContainer>
-          <RootNavigator />
-        </NavigationContainer>
+        <ShopProvider>
+          <NavigationContainer>
+            <RootNavigator />
+          </NavigationContainer>
+        </ShopProvider>
       </AuthProvider>
     </SafeAreaProvider>
   );

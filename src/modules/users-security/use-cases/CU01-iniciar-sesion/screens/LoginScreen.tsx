@@ -123,7 +123,7 @@ export default function LoginScreen({ navigation }: any) {
 
         {/* Logo */}
         <View style={styles.logoContainer}>
-          <Image source={require('../../assets/logo.png')} style={styles.logoImage} resizeMode="contain" />
+          <Image source={require('../../../../../assets/logo.png')} style={styles.logoImage} resizeMode="contain" />
         </View>
 
         {/* Header */}
@@ -230,7 +230,10 @@ export default function LoginScreen({ navigation }: any) {
         </View>
 
         {/* Olvidé contraseña */}
-        <TouchableOpacity style={styles.forgotButton}>
+        <TouchableOpacity 
+          style={styles.forgotButton}
+          onPress={() => navigation.navigate('ForgotPassword')}
+        >
           <Text style={styles.forgotText}>¿Olvidaste tu contraseña?</Text>
         </TouchableOpacity>
 
