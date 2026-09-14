@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, SafeAreaView, ActivityIndicator, Alert, ScrollView } from 'react-native';
-import axios from 'axios';
+import api from '../../../../../services/api';
 
 export default function RegisterScreen({ navigation }: any) {
   const [formData, setFormData] = useState({
@@ -16,12 +16,11 @@ export default function RegisterScreen({ navigation }: any) {
 
   const handleChange = (name: string, value: string) => {
     setFormData({ ...formData, [name]: value });
-    setErrorMsg('');
   };
 
   const handleRegister = async () => {
     if (!formData.nombre || !formData.apellido || !formData.email || !formData.password) {
-      setErrorMsg('Por favor, completa todos los campos requeridos.');
+      setErrorMsg('Todos los campos son obligatorios.');
       return;
     }
 
@@ -39,11 +38,7 @@ export default function RegisterScreen({ navigation }: any) {
     setErrorMsg('');
 
     try {
-      // Usar la IP de localhost para emuladores Android (10.0.2.2) o Wi-Fi
-      // Si se prueba en dispositivo físico, cambiar a la IP del servidor backend.
-      const API_URL = 'http://10.0.2.2:3000/auth/register'; 
-      
-      await axios.post(API_URL, {
+      await api.post('/auth/register', {
         nombre: formData.nombre,
         apellido: formData.apellido,
         email: formData.email,

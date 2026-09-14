@@ -1,9 +1,8 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ActivityIndicator } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
-import axios from 'axios';
+import { useNavigation, useRoute } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { API_URL } from '../../../../../config/api';
+import api from '../../../../../services/api';
 
 export default function ResetPasswordScreen() {
   const [token, setToken] = useState('');
@@ -12,6 +11,8 @@ export default function ResetPasswordScreen() {
   const [loading, setLoading] = useState(false);
   
   const navigation = useNavigation<any>();
+  const route = useRoute<any>();
+  const emailParam = route.params?.email;
 
   const handleReset = async () => {
     if (!token.trim() || !newPassword || !confirmPassword) {
@@ -31,8 +32,8 @@ export default function ResetPasswordScreen() {
 
     setLoading(true);
     try {
-      await axios.post(`${API_URL}/auth/password/reset`, { token, newPassword });
-      Alert.alert('Éxito', 'Tu contraseña ha sido restablecida. Ahora puedes iniciar sesión.', [
+      await api.post('/auth/password/reset', { token: token.trim(), newPassword });
+      Alert.alert('Éxito', 'Tu contraseña ha sido restablecida exitosamente. Ahora puedes iniciar sesión.', [
         { text: 'OK', onPress: () => navigation.navigate('Login') }
       ]);
     } catch (error: any) {
@@ -45,9 +46,9 @@ export default function ResetPasswordScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.title}>Restablecer</Text>
+        <Text style={styles.title}>Restablecer Contraseña</Text>
         <Text style={styles.subtitle}>
-          Ingresa el código que enviamos a tu correo y tu nueva contraseña.
+          Ingresa el código de 6 dígitos que enviamos a {emailParam ? <Text style={{ fontWeight: '700', color: '#1A1A1A' }}>{emailParam}</Text> : 'tu correo'} y define tu nueva contraseña.
         </Text>
       </View>
 

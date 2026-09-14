@@ -1,9 +1,8 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ActivityIndicator } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import axios from 'axios';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { API_URL } from '../../../../../config/api';
+import api from '../../../../../services/api';
 
 export default function ForgotPasswordScreen() {
   const [email, setEmail] = useState('');
@@ -18,10 +17,9 @@ export default function ForgotPasswordScreen() {
 
     setLoading(true);
     try {
-      // Usar la IP local si estás en emulador o la URL de producción
-      await axios.post(`${API_URL}/auth/password/forgot`, { email });
-      Alert.alert('Éxito', 'Se ha enviado un código de recuperación a tu correo.', [
-        { text: 'OK', onPress: () => navigation.navigate('ResetPassword') }
+      await api.post('/auth/password/forgot', { email: email.trim() });
+      Alert.alert('Éxito', 'Se ha enviado un código de recuperación de 6 dígitos a tu correo.', [
+        { text: 'OK', onPress: () => navigation.navigate('ResetPassword', { email: email.trim() }) }
       ]);
     } catch (error: any) {
       Alert.alert('Error', error.response?.data?.message || 'Hubo un error al procesar tu solicitud.');

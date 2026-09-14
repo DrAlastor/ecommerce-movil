@@ -12,6 +12,7 @@ export default function ProfileScreen({ navigation }: any) {
     sexo: '',
     fecha_nacimiento: '',
     preferencias_estilo: '',
+    telefono: '',
   });
 
   const [isLoading, setIsLoading] = useState(true);

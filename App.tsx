@@ -8,8 +8,6 @@ import {
   ActivityIndicator,
   StatusBar,
   StyleSheet,
-  Text,
-  TouchableOpacity,
   View,
   useColorScheme,
   Image,
@@ -41,7 +39,7 @@ type RootStackParamList = {
   Cart: undefined;
   Wishlist: undefined;
   ForgotPassword: undefined;
-  ResetPassword: undefined;
+  ResetPassword: { email?: string; token?: string } | undefined;
 };
 
 const RootStack = createNativeStackNavigator<RootStackParamList>();
@@ -79,14 +77,17 @@ const loadingStyles = StyleSheet.create({
 
 // Navegación principal
 function RootNavigator() {
-  const { isAuthenticated, isLoading, rol } = useAuth();
+  const { isAuthenticated, isLoading, user, rol } = useAuth();
 
   if (isLoading) {
     return <LoadingScreen />;
   }
 
-  // Si está autenticado y NO es cliente, mostramos el Panel de Administración (Drawer)
-  if (isAuthenticated && rol?.nombre && rol.nombre !== 'Cliente') {
+  const isClient = (rol?.nombre || '').toLowerCase().trim() === 'cliente';
+  const isStaff = Boolean(user?.empleado) || (Boolean(rol?.nombre) && !isClient);
+
+  // Si está autenticado y es personal/empleado, mostramos el Panel de Administración (Drawer)
+  if (isAuthenticated && isStaff) {
     return <AdminNavigator />;
   }
 

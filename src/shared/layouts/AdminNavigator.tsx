@@ -1,6 +1,6 @@
 import React from 'react';
-import { createDrawerNavigator, DrawerContentScrollView, DrawerItemList, DrawerItem } from '@react-navigation/drawer';
-import { View, Text, StyleSheet, Image, TouchableOpacity } from 'react-native';
+import { createDrawerNavigator, DrawerContentScrollView, DrawerItemList } from '@react-navigation/drawer';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import AdminDashboardScreen from '../../pages/admin/AdminDashboardScreen';
 import ProfileScreen from '../../modules/users-security/use-cases/CU03-gestionar-perfil/screens/ProfileScreen';
 import { useAuth } from '../../modules/users-security/shared/AuthContext';
@@ -11,7 +11,7 @@ function CustomDrawerContent(props: any) {
   const { user, rol, logout } = useAuth();
 
   return (
-    <View style={{ flex: 1 }}>
+    <View style={styles.container}>
       <DrawerContentScrollView {...props}>
         <View style={styles.drawerHeader}>
           <View style={styles.avatar}>
@@ -34,11 +34,9 @@ function CustomDrawerContent(props: any) {
 }
 
 export default function AdminNavigator() {
-  const { hasPermission } = useAuth();
-
   return (
     <Drawer.Navigator
-      drawerContent={(props) => <CustomDrawerContent {...props} />}
+      drawerContent={CustomDrawerContent}
       screenOptions={{
         headerStyle: { backgroundColor: '#FFFFFF' },
         headerTintColor: '#1A1A1A',
@@ -67,6 +65,9 @@ export default function AdminNavigator() {
 }
 
 const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
   drawerHeader: {
     padding: 20,
     backgroundColor: '#F8F5F1',

@@ -6,6 +6,7 @@ import React, {
   useMemo,
   useState,
 } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { authService } from './services/auth.service';
 import type { AuthState, LoginRequest } from './types/auth.types';
 
@@ -44,6 +45,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             rol: stored.rol,
             funciones: stored.funciones,
           });
+
+          // Sincronizar en segundo plano con la base de datos para obtener funciones y rol actualizados
+          try {
+            const profile = await authService.getProfile();
+            if (profile && profile.funciones) {
+              setState(prev => ({
+                ...prev,
+                user: profile.user,
+                rol: profile.rol,
+                funciones: profile.funciones,
+              }));
+              await authService.saveAuth({
+                accessToken: (await AsyncStorage.getItem('accessToken')) || '',
+                user: profile.user,
+                rol: profile.rol,
+                funciones: profile.funciones,
+              });
+            }
+          } catch {
+            // Si el token expiró o falló la sincronización
+          }
         } else {
           setState(prev => ({ ...prev, isLoading: false }));
         }

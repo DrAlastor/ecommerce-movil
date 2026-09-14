@@ -1,10 +1,15 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import api from '../../../../services/api';
-import type { LoginRequest, LoginResponse } from '../types/auth.types';
+import type { LoginRequest, LoginResponse, AuthUser, RolInfo, FuncionInfo } from '../types/auth.types';
 
 export const authService = {
   async login(credentials: LoginRequest): Promise<LoginResponse> {
     const response = await api.post<LoginResponse>('/auth/login', credentials);
+    return response.data;
+  },
+
+  async getProfile(): Promise<{ user: AuthUser; rol: RolInfo; funciones: FuncionInfo[] }> {
+    const response = await api.get('/auth/profile');
     return response.data;
   },
 
@@ -40,7 +45,16 @@ export const authService = {
   },
 
   async logout(): Promise<void> {
-    await AsyncStorage.removeItem('accessToken');
-    await AsyncStorage.removeItem('authUser');
+    try {
+      const token = await AsyncStorage.getItem('accessToken');
+      if (token) {
+        await api.post('/auth/logout');
+      }
+    } catch (error) {
+      console.warn('Error al notificar cierre de sesión al servidor:', error);
+    } finally {
+      await AsyncStorage.removeItem('accessToken');
+      await AsyncStorage.removeItem('authUser');
+    }
   },
 };
