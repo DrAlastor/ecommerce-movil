@@ -141,7 +141,17 @@ export default function ProfileScreen({ navigation }: any) {
     <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         <View style={styles.header}>
-          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
+          <TouchableOpacity 
+            onPress={() => {
+              if (navigation?.canGoBack && navigation.canGoBack()) {
+                navigation.goBack();
+              } else if (navigation?.navigate) {
+                navigation.navigate('Dashboard');
+              }
+            }} 
+            style={styles.backBtn}
+            activeOpacity={0.75}
+          >
             <Text style={styles.backText}>← Volver</Text>
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Mi Perfil</Text>

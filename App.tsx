@@ -27,6 +27,8 @@ import ProfileScreen from './src/modules/users-security/use-cases/CU03-gestionar
 import ForgotPasswordScreen from './src/modules/users-security/use-cases/CU04-gestionar-contrasena/screens/ForgotPasswordScreen';
 import ResetPasswordScreen from './src/modules/users-security/use-cases/CU04-gestionar-contrasena/screens/ResetPasswordScreen';
 import CatalogScreen from './src/modules/catalog/use-cases/CU10-consultar-catalogo-productos/screens/CatalogScreen';
+import { ProductDetailScreen } from './src/modules/catalog/use-cases/CU11-consultar-detalle-disponibilidad/screens/ProductDetailScreen';
+import RecommendationsScreen from './src/modules/catalog/use-cases/CU26-obtener-recomendaciones-ia/screens/RecommendationsScreen';
 import CartScreen from './src/modules/shop/use-cases/CU11-gestionar-carrito/screens/CartScreen';
 import WishlistScreen from './src/modules/shop/use-cases/CU12-lista-deseos/screens/WishlistScreen';
 
@@ -38,6 +40,8 @@ type RootStackParamList = {
   Profile: undefined;
   Cart: undefined;
   Wishlist: undefined;
+  ProductDetail: { id_producto: number; product?: any };
+  Recommendations: undefined;
   ForgotPassword: undefined;
   ResetPassword: { email?: string; token?: string } | undefined;
 };
@@ -95,6 +99,8 @@ function RootNavigator() {
   return (
     <RootStack.Navigator screenOptions={{ headerShown: false }}>
       <RootStack.Screen name="Home" component={CatalogScreen} />
+      <RootStack.Screen name="ProductDetail" component={ProductDetailScreen} />
+      <RootStack.Screen name="Recommendations" component={RecommendationsScreen} />
       <RootStack.Screen name="Cart" component={CartScreen} />
       <RootStack.Screen name="Wishlist" component={WishlistScreen} />
       <RootStack.Screen name="Profile" component={ProfileScreen} />

@@ -1,108 +1,112 @@
-import React, { useState } from 'react';
+import React from 'react';
 import {
   View,
   Text,
   StyleSheet,
   FlatList,
-  Image,
   TouchableOpacity,
   SafeAreaView,
+  ActivityIndicator,
+  RefreshControl,
 } from 'react-native';
 import { useAuth } from '../../../../users-security/shared/AuthContext';
 import { useShop } from '../../../../../shared/context/ShopContext';
-import { PRODUCTS, CATEGORIES } from '../../../../../data/mockProducts';
-import type { Product } from '../../../../../types/shop.types';
+import { useMobileCatalog } from '../hooks/useMobileCatalog';
+import { SearchHeader } from '../components/SearchHeader';
+import { CategoryPills } from '../components/CategoryPills';
+import { MobileProductCard } from '../components/MobileProductCard';
 import FilterModal from '../components/FilterModal';
+import type { MobileCatalogProduct } from '../../../services/catalog.service';
 
 export default function CatalogScreen({ navigation }: any) {
-  const { isAuthenticated, user, logout } = useAuth();
-  const { cartItemCount, toggleWishlist, isInWishlist, addToCart } = useShop();
+  const { isAuthenticated, logout } = useAuth();
+  const { cartItemCount, wishlistCount } = useShop();
 
-  const [selectedCategory, setSelectedCategory] = useState<string>('all');
-  const [filterModalVisible, setFilterModalVisible] = useState(false);
-  const [activeFilters, setActiveFilters] = useState<any>({});
+  const {
+    products,
+    filterMeta,
+    loading,
+    refreshing,
+    errorMessage,
+    selectedCategory,
+    setSelectedCategory,
+    searchQuery,
+    setSearchQuery,
+    filterModalVisible,
+    setFilterModalVisible,
+    activeFilters,
+    loadProducts,
+    handleApplyFilters,
+    handleResetFilters,
+    toShopProduct,
+  } = useMobileCatalog();
 
-  const filteredProducts = PRODUCTS.filter((product) => {
-    // Filtrar por categoría
-    if (selectedCategory !== 'all' && product.categorySlug !== selectedCategory) return false;
-    
-    // Filtros avanzados
-    if (activeFilters.sizes && activeFilters.sizes.length > 0) {
-      if (!product.sizes || !product.sizes.some((s: string) => activeFilters.sizes.includes(s))) return false;
+  const hasActiveFilters = Boolean(
+    activeFilters.sizes?.length > 0 ||
+    activeFilters.colors?.length > 0 ||
+    activeFilters.onlySale ||
+    activeFilters.minPrice ||
+    activeFilters.maxPrice ||
+    (activeFilters.gender && activeFilters.gender !== 'all')
+  );
+
+  const categoriesList = React.useMemo(() => [
+    { id: 'all', name: 'Todos' },
+    ...(filterMeta?.categorias.map((c: { id_categoria: number; nombre: string; total_productos: number }) => ({
+      id: c.nombre,
+      name: `${c.nombre} (${c.total_productos})`,
+    })) || []),
+  ], [filterMeta]);
+
+  const handleProductPress = React.useCallback((item: MobileCatalogProduct) => {
+    if (navigation?.navigate) {
+      navigation.navigate('ProductDetail', {
+        id_producto: item.id_producto,
+        product: item,
+      });
     }
-    if (activeFilters.colors && activeFilters.colors.length > 0) {
-      if (!product.colors || !product.colors.some((c: string) => activeFilters.colors.includes(c))) return false;
-    }
-    if (activeFilters.minPrice && product.price < parseFloat(activeFilters.minPrice)) return false;
-    if (activeFilters.maxPrice && product.price > parseFloat(activeFilters.maxPrice)) return false;
-    
-    return true;
-  });
+  }, [navigation]);
 
-  const formatPrice = (price: number) => {
-    return `${price.toFixed(2)} Bs`;
-  };
+  const renderProductItem = React.useCallback(({ item }: { item: MobileCatalogProduct }) => (
+    <MobileProductCard
+      item={item}
+      toShopProduct={toShopProduct}
+      onPress={() => handleProductPress(item)}
+    />
+  ), [toShopProduct, handleProductPress]);
 
-  const handleApplyFilters = (filters: any) => {
-    setActiveFilters(filters);
-  };
-
-  const renderProduct = ({ item }: { item: Product }) => {
-    const isFavorite = isInWishlist(item.id);
-    return (
-      <View style={styles.productCard}>
-        <View>
-          <Image source={{ uri: item.image }} style={styles.productImage} resizeMode="cover" />
-          <TouchableOpacity 
-            style={styles.heartBtn} 
-            onPress={() => toggleWishlist(item.id)}
-          >
-            <Text style={[styles.heartIcon, isFavorite && styles.heartActive]}>
-              {isFavorite ? '♥' : '♡'}
-            </Text>
-          </TouchableOpacity>
-        </View>
-        <View style={styles.productInfo}>
-          <Text style={styles.productName} numberOfLines={2}>
-            {item.name}
-          </Text>
-          <Text style={styles.productPrice}>{formatPrice(item.price)}</Text>
-          
-          <TouchableOpacity 
-            style={styles.addToCartBtn} 
-            onPress={() => addToCart(item, 1, item.sizes?.[0], item.colors?.[0])}
-          >
-            <Text style={styles.addToCartText}>Agregar</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-    );
-  };
-
-  const renderCategory = ({ item }: { item: any }) => {
-    const isSelected = selectedCategory === item.id;
-    return (
-      <TouchableOpacity
-        style={[styles.categoryButton, isSelected && styles.categoryButtonSelected]}
-        onPress={() => setSelectedCategory(item.id)}
-      >
-        <Text style={[styles.categoryText, isSelected && styles.categoryTextSelected]}>
-          {item.name}
-        </Text>
-      </TouchableOpacity>
-    );
-  };
+  const keyExtractor = React.useCallback((item: MobileCatalogProduct) => item.id_producto.toString(), []);
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* Navbar/Header */}
+      {/* Header Superior */}
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Dressly</Text>
         <View style={styles.headerActions}>
-          <TouchableOpacity style={styles.iconBtn} onPress={() => navigation.navigate('Wishlist')}>
-            <Text style={styles.iconText}>♡</Text>
+          <TouchableOpacity
+            style={styles.iconBtn}
+            activeOpacity={0.75}
+            onPress={() => navigation.navigate('Recommendations')}
+          >
+            <Text style={styles.iconText}>IA</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.iconBtn} onPress={() => navigation.navigate('Cart')}>
+          <TouchableOpacity
+            style={styles.iconBtn}
+            activeOpacity={0.75}
+            onPress={() => navigation.navigate('Wishlist')}
+          >
+            <Text style={[styles.iconText, wishlistCount > 0 && { color: '#DC2626' }]}>♥</Text>
+            {wishlistCount > 0 && (
+              <View style={styles.badge}>
+                <Text style={styles.badgeText}>{wishlistCount}</Text>
+              </View>
+            )}
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.iconBtn}
+            activeOpacity={0.75}
+            onPress={() => navigation.navigate('Cart')}
+          >
             <Text style={styles.iconText}>🛒</Text>
             {cartItemCount > 0 && (
               <View style={styles.badge}>
@@ -111,60 +115,101 @@ export default function CatalogScreen({ navigation }: any) {
             )}
           </TouchableOpacity>
           {isAuthenticated && (
-            <TouchableOpacity style={styles.iconBtn} onPress={() => navigation.navigate('Profile')}>
+            <TouchableOpacity
+              style={styles.iconBtn}
+              activeOpacity={0.75}
+              onPress={() => navigation.navigate('Profile')}
+            >
               <Text style={styles.iconText}>👤</Text>
             </TouchableOpacity>
           )}
           {isAuthenticated ? (
-            <TouchableOpacity onPress={logout} style={styles.authButton}>
+            <TouchableOpacity onPress={logout} style={styles.authButton} activeOpacity={0.8}>
               <Text style={styles.authButtonText}>Salir</Text>
             </TouchableOpacity>
           ) : (
-            <TouchableOpacity onPress={() => navigation.navigate('Login')} style={styles.authButton}>
+            <TouchableOpacity
+              onPress={() => navigation.navigate('Login')}
+              style={styles.authButton}
+              activeOpacity={0.8}
+            >
               <Text style={styles.authButtonText}>Ingresar</Text>
             </TouchableOpacity>
           )}
         </View>
       </View>
 
-      {/* Welcome Bar */}
-      {isAuthenticated && (
-        <View style={styles.welcomeBar}>
-          <Text style={styles.welcomeText}>Hola, {user?.email}</Text>
-        </View>
-      )}
-
-      {/* Filter and Categories Row */}
-      <View style={styles.filterRow}>
-        <TouchableOpacity style={styles.filterButton} onPress={() => setFilterModalVisible(true)}>
-          <Text style={styles.filterButtonText}>Filtros ▾</Text>
-        </TouchableOpacity>
-        <FlatList
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          data={CATEGORIES}
-          keyExtractor={(item) => item.id}
-          renderItem={renderCategory}
-          contentContainerStyle={styles.categoriesList}
-        />
-      </View>
-
-      {/* Products Grid */}
-      <FlatList
-        data={filteredProducts}
-        keyExtractor={(item) => item.id.toString()}
-        renderItem={renderProduct}
-        numColumns={2}
-        contentContainerStyle={styles.productsList}
-        columnWrapperStyle={styles.row}
-        showsVerticalScrollIndicator={false}
+      {/* Buscador */}
+      <SearchHeader
+        searchQuery={searchQuery}
+        onChangeSearch={setSearchQuery}
+        onClearSearch={() => setSearchQuery('')}
       />
 
+      {/* Filtros y Categorías Horizontales */}
+      <CategoryPills
+        categories={categoriesList}
+        selectedCategory={selectedCategory}
+        onSelectCategory={setSelectedCategory}
+        onOpenFilters={() => setFilterModalVisible(true)}
+        hasActiveFilters={hasActiveFilters}
+      />
+
+      {/* Contenido / Estado de Carga / Error */}
+      {loading && !refreshing ? (
+        <View style={styles.centerContainer}>
+          <ActivityIndicator size="large" color="#1A1A1A" />
+          <Text style={styles.loadingText}>Cargando catálogo de prendas...</Text>
+        </View>
+      ) : errorMessage ? (
+        <View style={styles.centerContainer}>
+          <Text style={styles.errorText}>{errorMessage}</Text>
+          <TouchableOpacity style={styles.retryButton} onPress={() => loadProducts()}>
+            <Text style={styles.retryButtonText}>Reintentar</Text>
+          </TouchableOpacity>
+        </View>
+      ) : products.length === 0 ? (
+        <View style={styles.centerContainer}>
+          <Text style={{ fontSize: 40, marginBottom: 8 }}>👗</Text>
+          <Text style={styles.emptyTitle}>No se encontraron prendas</Text>
+          <Text style={styles.emptySubtext}>
+            Prueba ajustando tus términos de búsqueda o limpiando los filtros seleccionados.
+          </Text>
+          <TouchableOpacity style={styles.retryButton} onPress={handleResetFilters}>
+            <Text style={styles.retryButtonText}>Restablecer filtros</Text>
+          </TouchableOpacity>
+        </View>
+      ) : (
+        <FlatList
+          data={products}
+          keyExtractor={keyExtractor}
+          renderItem={renderProductItem}
+          numColumns={2}
+          contentContainerStyle={styles.productsList}
+          columnWrapperStyle={styles.row}
+          showsVerticalScrollIndicator={false}
+          initialNumToRender={6}
+          maxToRenderPerBatch={8}
+          windowSize={5}
+          removeClippedSubviews={true}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={() => loadProducts(true)}
+              colors={['#1A1A1A']}
+            />
+          }
+        />
+      )}
+
+      {/* Modal de Filtros Avanzados */}
       <FilterModal
         visible={filterModalVisible}
         onClose={() => setFilterModalVisible(false)}
         onApply={handleApplyFilters}
         currentFilters={activeFilters}
+        availableSizes={filterMeta?.tallas.map((t: { id_talla: number; codigo: string }) => t.codigo)}
+        availableColors={filterMeta?.colores.map((c: { id_color: number; nombre: string; codigo_hex: string | null }) => c.nombre)}
       />
     </SafeAreaView>
   );
@@ -172,35 +217,58 @@ export default function CatalogScreen({ navigation }: any) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F8F5F1' },
-  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 16, borderBottomWidth: 1, borderBottomColor: '#E8E8E8', backgroundColor: '#FFFFFF' },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E8E8E8',
+    backgroundColor: '#FFFFFF',
+  },
   headerTitle: { fontSize: 22, fontWeight: 'bold', fontFamily: 'Georgia', color: '#1A1A1A' },
   headerActions: { flexDirection: 'row', alignItems: 'center' },
   iconBtn: { marginLeft: 12, position: 'relative' },
-  iconText: { fontSize: 22, color: '#1A1A1A' },
-  badge: { position: 'absolute', top: -4, right: -6, backgroundColor: '#D9534F', borderRadius: 8, minWidth: 16, height: 16, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 4 },
+  iconText: { fontSize: 20, color: '#1A1A1A' },
+  badge: {
+    position: 'absolute',
+    top: -4,
+    right: -6,
+    backgroundColor: '#DC2626',
+    borderRadius: 8,
+    minWidth: 16,
+    height: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 4,
+  },
   badgeText: { color: '#FFFFFF', fontSize: 10, fontWeight: 'bold' },
-  authButton: { marginLeft: 16, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 6, backgroundColor: '#1A1A1A' },
-  authButtonText: { color: '#FFFFFF', fontSize: 14, fontWeight: '500' },
-  welcomeBar: { backgroundColor: '#FAF7F2', paddingHorizontal: 16, paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: '#E8E8E8' },
-  welcomeText: { fontSize: 14, color: '#6B6B6B' },
-  filterRow: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFFFFF', paddingVertical: 12, paddingLeft: 16 },
-  filterButton: { paddingHorizontal: 12, paddingVertical: 8, borderRadius: 20, borderWidth: 1, borderColor: '#1A1A1A', marginRight: 12 },
-  filterButtonText: { fontSize: 14, color: '#1A1A1A', fontWeight: '500' },
-  categoriesList: { paddingRight: 16 },
-  categoryButton: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20, backgroundColor: '#F0F0F0', marginRight: 8 },
-  categoryButtonSelected: { backgroundColor: '#1A1A1A' },
-  categoryText: { fontSize: 14, color: '#6B6B6B' },
-  categoryTextSelected: { color: '#FFFFFF', fontWeight: '500' },
-  productsList: { padding: 16 },
+  authButton: {
+    marginLeft: 14,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 6,
+    backgroundColor: '#1A1A1A',
+  },
+  authButtonText: { color: '#FFFFFF', fontSize: 13, fontWeight: '600' },
+  productsList: { padding: 12 },
   row: { justifyContent: 'space-between' },
-  productCard: { width: '48%', backgroundColor: '#FFFFFF', borderRadius: 8, marginBottom: 16, overflow: 'hidden', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 4, elevation: 2 },
-  productImage: { width: '100%', height: 200, backgroundColor: '#E8E8E8' },
-  heartBtn: { position: 'absolute', top: 8, right: 8, backgroundColor: 'rgba(255,255,255,0.8)', width: 28, height: 28, borderRadius: 14, justifyContent: 'center', alignItems: 'center' },
-  heartIcon: { fontSize: 18, color: '#9B9B9B', marginTop: -2 },
-  heartActive: { color: '#D9534F' },
-  productInfo: { padding: 12 },
-  productName: { fontSize: 14, color: '#1A1A1A', marginBottom: 4, height: 40 },
-  productPrice: { fontSize: 16, fontWeight: '600', color: '#C4956A', marginBottom: 12 },
-  addToCartBtn: { backgroundColor: '#1A1A1A', paddingVertical: 8, borderRadius: 4, alignItems: 'center' },
-  addToCartText: { color: '#FFFFFF', fontSize: 12, fontWeight: '600' },
+  centerContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+  },
+  loadingText: { marginTop: 12, fontSize: 14, color: '#6B7280' },
+  errorText: { color: '#DC2626', fontSize: 14, textAlign: 'center', marginBottom: 12 },
+  emptyTitle: { fontSize: 16, fontWeight: 'bold', color: '#1A1A1A', marginBottom: 4 },
+  emptySubtext: { fontSize: 13, color: '#6B7280', textAlign: 'center', marginBottom: 16 },
+  retryButton: {
+    backgroundColor: '#1A1A1A',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 8,
+  },
+  retryButtonText: { color: '#FFFFFF', fontSize: 13, fontWeight: '600' },
 });

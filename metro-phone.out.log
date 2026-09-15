@@ -1,0 +1,19 @@
+
+> FashionStoreMobile@0.0.1 start
+> react-native start --port 8081
+
+
+Welcome to React Native v0.86
+Starting dev server on http://localhost:8081
+
+[0mError: listen EADDRINUSE: address already in use :::8081
+    at Server.setupListenHandle [as _listen2] (node:net:2324:16)
+    at listenInCluster (node:net:2433:12)
+    at Server.listen (node:net:2558:7)
+    at E:\P1\ecommerce-movil\node_modules\metro\src\index.flow.js:448:14
+    at new Promise (<anonymous>)
+    at earlyPortCheck (E:\P1\ecommerce-movil\node_modules\metro\src\index.flow.js:444:11)
+    at Object.runServer (E:\P1\ecommerce-movil\node_modules\metro\src\index.flow.js:199:9)
+    at Object.runServer [as func] (E:\P1\ecommerce-movil\node_modules\@react-native\community-cli-plugin\dist\commands\start\runServer.js:147:24)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async Command.handleAction (E:\P1\ecommerce-movil\node_modules\@react-native-community\cli\build\index.js:139:9)[0m

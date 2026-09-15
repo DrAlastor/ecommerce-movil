@@ -3,6 +3,11 @@ import { createDrawerNavigator, DrawerContentScrollView, DrawerItemList } from '
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import AdminDashboardScreen from '../../pages/admin/AdminDashboardScreen';
 import ProfileScreen from '../../modules/users-security/use-cases/CU03-gestionar-perfil/screens/ProfileScreen';
+import CatalogScreen from '../../modules/catalog/use-cases/CU10-consultar-catalogo-productos/screens/CatalogScreen';
+import { ProductDetailScreen } from '../../modules/catalog/use-cases/CU11-consultar-detalle-disponibilidad/screens/ProductDetailScreen';
+import RecommendationsScreen from '../../modules/catalog/use-cases/CU26-obtener-recomendaciones-ia/screens/RecommendationsScreen';
+import CartScreen from '../../modules/shop/use-cases/CU11-gestionar-carrito/screens/CartScreen';
+import WishlistScreen from '../../modules/shop/use-cases/CU12-lista-deseos/screens/WishlistScreen';
 import { useAuth } from '../../modules/users-security/shared/AuthContext';
 
 const Drawer = createDrawerNavigator();
@@ -25,7 +30,7 @@ function CustomDrawerContent(props: any) {
         <DrawerItemList {...props} />
       </DrawerContentScrollView>
       <View style={styles.footer}>
-        <TouchableOpacity style={styles.logoutButton} onPress={logout}>
+        <TouchableOpacity style={styles.logoutButton} onPress={logout} activeOpacity={0.8}>
           <Text style={styles.logoutText}>Cerrar Sesión</Text>
         </TouchableOpacity>
       </View>
@@ -50,16 +55,62 @@ export default function AdminNavigator() {
       <Drawer.Screen 
         name="Dashboard" 
         component={AdminDashboardScreen} 
-        options={{ title: 'Panel de Control' }} 
+        options={{ title: '📊 Panel de Control' }} 
       />
-      
+
+      {/* CU10: Consultar catálogo de productos */}
+      <Drawer.Screen 
+        name="Catalog" 
+        component={CatalogScreen} 
+        options={{ title: '👗 Catálogo de Prendas', headerShown: false }} 
+      />
+
+      {/* CU26: Obtener recomendaciones de prendas mediante IA */}
+      <Drawer.Screen 
+        name="Recommendations" 
+        component={RecommendationsScreen} 
+        options={{ title: '✨ Asistente IA / Estilos' }} 
+      />
+
       {/* CU03: Gestionar Perfil */}
       <Drawer.Screen 
         name="Profile" 
         component={ProfileScreen} 
-        options={{ title: 'Mi Perfil' }} 
+        options={{ title: '👤 Mi Perfil' }} 
       />
 
+      <Drawer.Screen 
+        name="Cart" 
+        component={CartScreen} 
+        options={{ title: '🛒 Bolsa de Compras' }} 
+      />
+
+      <Drawer.Screen 
+        name="Wishlist" 
+        component={WishlistScreen} 
+        options={{ title: '♥ Mis Favoritos' }} 
+      />
+
+      {/* CU11: Detalle de Producto (navegable desde Catálogo) */}
+      <Drawer.Screen 
+        name="ProductDetail" 
+        component={ProductDetailScreen} 
+        options={{ 
+          title: 'Detalle de Prenda',
+          drawerItemStyle: { display: 'none' },
+          headerShown: false,
+        }} 
+      />
+
+      {/* Alias para navegación interna */}
+      <Drawer.Screen 
+        name="Home" 
+        component={CatalogScreen} 
+        options={{ 
+          drawerItemStyle: { display: 'none' },
+          headerShown: false,
+        }} 
+      />
     </Drawer.Navigator>
   );
 }

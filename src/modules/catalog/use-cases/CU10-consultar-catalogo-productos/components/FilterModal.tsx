@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, Modal, TouchableOpacity, ScrollView, TextInput } from 'react-native';
 
 interface FilterModalProps {
@@ -6,16 +6,38 @@ interface FilterModalProps {
   onClose: () => void;
   onApply: (filters: any) => void;
   currentFilters: any;
+  availableSizes?: string[];
+  availableColors?: string[];
 }
 
-const SIZES = ['XS', 'S', 'M', 'L', 'XL'];
-const COLORS = ['Negro', 'Blanco', 'Beige', 'Rojo', 'Azul'];
+const DEFAULT_SIZES = ['XS', 'S', 'M', 'L', 'XL'];
+const DEFAULT_COLORS = ['Negro', 'Blanco', 'Azul', 'Rojo', 'Verde'];
 
-export default function FilterModal({ visible, onClose, onApply, currentFilters }: FilterModalProps) {
+export default function FilterModal({
+  visible,
+  onClose,
+  onApply,
+  currentFilters,
+  availableSizes = DEFAULT_SIZES,
+  availableColors = DEFAULT_COLORS,
+}: FilterModalProps) {
   const [selectedSizes, setSelectedSizes] = useState<string[]>(currentFilters.sizes || []);
   const [selectedColors, setSelectedColors] = useState<string[]>(currentFilters.colors || []);
   const [minPrice, setMinPrice] = useState<string>(currentFilters.minPrice || '');
   const [maxPrice, setMaxPrice] = useState<string>(currentFilters.maxPrice || '');
+  const [onlySale, setOnlySale] = useState<boolean>(currentFilters.onlySale || false);
+  const [selectedGender, setSelectedGender] = useState<string>(currentFilters.gender || 'all');
+
+  useEffect(() => {
+    if (visible) {
+      setSelectedSizes(currentFilters.sizes || []);
+      setSelectedColors(currentFilters.colors || []);
+      setMinPrice(currentFilters.minPrice || '');
+      setMaxPrice(currentFilters.maxPrice || '');
+      setOnlySale(currentFilters.onlySale || false);
+      setSelectedGender(currentFilters.gender || 'all');
+    }
+  }, [visible, currentFilters]);
 
   const toggleSelection = (item: string, list: string[], setList: (v: string[]) => void) => {
     if (list.includes(item)) {
@@ -31,6 +53,8 @@ export default function FilterModal({ visible, onClose, onApply, currentFilters 
       colors: selectedColors,
       minPrice,
       maxPrice,
+      onlySale,
+      gender: selectedGender,
     });
     onClose();
   };
@@ -40,25 +64,69 @@ export default function FilterModal({ visible, onClose, onApply, currentFilters 
     setSelectedColors([]);
     setMinPrice('');
     setMaxPrice('');
+    setOnlySale(false);
+    setSelectedGender('all');
   };
+
+  const sizesToRender = availableSizes.length > 0 ? availableSizes : DEFAULT_SIZES;
+  const colorsToRender = availableColors.length > 0 ? availableColors : DEFAULT_COLORS;
 
   return (
     <Modal visible={visible} animationType="slide" transparent={true} onRequestClose={onClose}>
       <View style={styles.modalOverlay}>
         <View style={styles.modalContent}>
           <View style={styles.header}>
-            <Text style={styles.headerTitle}>Filtros</Text>
-            <TouchableOpacity onPress={onClose}>
+            <Text style={styles.headerTitle}>Filtros Avanzados</Text>
+            <TouchableOpacity onPress={onClose} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
               <Text style={styles.closeText}>✕</Text>
             </TouchableOpacity>
           </View>
 
           <ScrollView style={styles.scrollBody} showsVerticalScrollIndicator={false}>
+            {/* Género */}
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Género</Text>
+              <View style={styles.pillContainer}>
+                {[
+                  { label: 'Todos', value: 'all' },
+                  { label: 'Mujer', value: 'Mujer' },
+                  { label: 'Hombre', value: 'Hombre' },
+                  { label: 'Unisex', value: 'Unisex' },
+                ].map((g) => {
+                  const isSelected = selectedGender === g.value;
+                  return (
+                    <TouchableOpacity
+                      key={g.value}
+                      style={[styles.pill, isSelected && styles.pillSelected]}
+                      onPress={() => setSelectedGender(g.value)}
+                    >
+                      <Text style={[styles.pillText, isSelected && styles.pillTextSelected]}>
+                        {g.label}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+            </View>
+
+            {/* Promociones */}
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Promociones</Text>
+              <TouchableOpacity
+                style={[styles.salePill, onlySale && styles.salePillSelected]}
+                onPress={() => setOnlySale(!onlySale)}
+              >
+                <Text style={[styles.salePillText, onlySale && styles.salePillTextSelected]}>
+                  🏷️ Solo artículos con descuento
+                </Text>
+              </TouchableOpacity>
+            </View>
+
             {/* Tallas */}
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>Talla</Text>
               <View style={styles.pillContainer}>
-                {SIZES.map((size) => {
+                {sizesToRender.map((size) => {
                   const isSelected = selectedSizes.includes(size);
                   return (
                     <TouchableOpacity
@@ -77,7 +145,7 @@ export default function FilterModal({ visible, onClose, onApply, currentFilters 
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>Color</Text>
               <View style={styles.pillContainer}>
-                {COLORS.map((color) => {
+                {colorsToRender.map((color) => {
                   const isSelected = selectedColors.includes(color);
                   return (
                     <TouchableOpacity
@@ -99,6 +167,7 @@ export default function FilterModal({ visible, onClose, onApply, currentFilters 
                 <TextInput
                   style={styles.priceInput}
                   placeholder="Mínimo"
+                  placeholderTextColor="#999"
                   keyboardType="numeric"
                   value={minPrice}
                   onChangeText={setMinPrice}
@@ -107,6 +176,7 @@ export default function FilterModal({ visible, onClose, onApply, currentFilters 
                 <TextInput
                   style={styles.priceInput}
                   placeholder="Máximo"
+                  placeholderTextColor="#999"
                   keyboardType="numeric"
                   value={maxPrice}
                   onChangeText={setMaxPrice}
@@ -137,14 +207,15 @@ const styles = StyleSheet.create({
   },
   modalContent: {
     backgroundColor: '#FFFFFF',
-    borderTopLeftRadius: 16,
-    borderTopRightRadius: 16,
-    height: '80%',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    height: '82%',
     paddingTop: 16,
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    alignItems: 'center',
     paddingHorizontal: 20,
     paddingBottom: 16,
     borderBottomWidth: 1,
@@ -158,18 +229,19 @@ const styles = StyleSheet.create({
   closeText: {
     fontSize: 20,
     color: '#1A1A1A',
+    fontWeight: '600',
   },
   scrollBody: {
     padding: 20,
   },
   section: {
-    marginBottom: 24,
+    marginBottom: 22,
   },
   sectionTitle: {
-    fontSize: 16,
-    fontWeight: '600',
+    fontSize: 15,
+    fontWeight: '700',
     color: '#1A1A1A',
-    marginBottom: 12,
+    marginBottom: 10,
   },
   pillContainer: {
     flexDirection: 'row',
@@ -182,18 +254,40 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#E8E8E8',
     borderRadius: 20,
+    backgroundColor: '#FAFAFA',
   },
   pillSelected: {
     backgroundColor: '#1A1A1A',
     borderColor: '#1A1A1A',
   },
   pillText: {
-    color: '#6B6B6B',
+    color: '#4B5563',
     fontSize: 14,
   },
   pillTextSelected: {
     color: '#FFFFFF',
-    fontWeight: '500',
+    fontWeight: '600',
+  },
+  salePill: {
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderWidth: 1,
+    borderColor: '#FCA5A5',
+    borderRadius: 12,
+    backgroundColor: '#FEF2F2',
+    alignItems: 'center',
+  },
+  salePillSelected: {
+    backgroundColor: '#DC2626',
+    borderColor: '#DC2626',
+  },
+  salePillText: {
+    color: '#DC2626',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  salePillTextSelected: {
+    color: '#FFFFFF',
   },
   priceContainer: {
     flexDirection: 'row',
@@ -208,6 +302,8 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     paddingHorizontal: 12,
     fontSize: 14,
+    color: '#1A1A1A',
+    backgroundColor: '#FAFAFA',
   },
   priceDivider: {
     fontSize: 16,
@@ -219,6 +315,7 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: '#E8E8E8',
     gap: 12,
+    backgroundColor: '#FFFFFF',
   },
   clearButton: {
     flex: 1,
@@ -231,7 +328,7 @@ const styles = StyleSheet.create({
   },
   clearButtonText: {
     color: '#1A1A1A',
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '600',
   },
   applyButton: {
@@ -244,7 +341,7 @@ const styles = StyleSheet.create({
   },
   applyButtonText: {
     color: '#FFFFFF',
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '600',
   },
 });

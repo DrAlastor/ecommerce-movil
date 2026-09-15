@@ -1,17 +1,18 @@
-import React from 'react';
-import { View, Text, StyleSheet, ScrollView, SafeAreaView, Dimensions } from 'react-native';
+import React, { useState } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  SafeAreaView,
+  Dimensions,
+  TouchableOpacity,
+  Modal,
+} from 'react-native';
 import { useAuth } from '../../modules/users-security/shared/AuthContext';
 
 const { width } = Dimensions.get('window');
 const isTablet = width >= 768;
-
-// Casos de uso exclusivos de la plataforma Web (no aplican para móvil)
-const WEB_ONLY_FUNCTIONS = [
-  'gestionar usuarios',
-  'gestionar roles',
-  'gestionar roles y permisos',
-  'gestionar empleados',
-];
 
 const getModuleIcon = (modulo: string) => {
   const norm = modulo.toLowerCase();
@@ -24,19 +25,19 @@ const getModuleIcon = (modulo: string) => {
   return '📁';
 };
 
-export default function AdminDashboardScreen() {
+export default function AdminDashboardScreen({ navigation }: any) {
   const { user, rol, funciones } = useAuth();
+  const [modalData, setModalData] = useState<{
+    visible: boolean;
+    title: string;
+    description: string;
+    isWebOnly: boolean;
+  } | null>(null);
 
-  // Filtrar funciones activas (acceso !== 'Ninguno') y excluir casos de uso exclusivamente web (CU05, CU06, CU07)
+  // Filtrar funciones activas (acceso !== 'Ninguno')
   const allowedFunciones = funciones.filter(f => {
     const access = (f.nivel_acceso || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
-    if (access === 'ninguno' || access === '') return false;
-    
-    const funcNameNorm = (f.nombre || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
-    if (WEB_ONLY_FUNCTIONS.some(webOnly => funcNameNorm.includes(webOnly))) {
-      return false;
-    }
-    return true;
+    return access !== 'ninguno' && access !== '';
   });
 
   // Agrupar funciones por módulo
@@ -45,6 +46,43 @@ export default function AdminDashboardScreen() {
     if (!modulesMap.has(f.modulo)) modulesMap.set(f.modulo, []);
     modulesMap.get(f.modulo)!.push(f);
   });
+
+  const handleFunctionPress = (f: { nombre: string; modulo: string; nivel_acceso: string }) => {
+    const norm = f.nombre.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
+    const modNorm = f.modulo.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
+
+    // 1. Catálogo y prendas (CU10 / CU11)
+    if (norm.includes('catalogo') || norm.includes('producto') || norm.includes('categoria') || norm.includes('variante') || modNorm.includes('catalogo')) {
+      if (navigation?.navigate) {
+        navigation.navigate('Catalog');
+        return;
+      }
+    }
+
+    // 2. IA y recomendaciones (CU26)
+    if (norm.includes('ia') || norm.includes('recomendacion') || norm.includes('vestidor') || modNorm.includes('ia') || modNorm.includes('realidad')) {
+      if (navigation?.navigate) {
+        navigation.navigate('Recommendations');
+        return;
+      }
+    }
+
+    // 3. Perfil y usuario (CU03 / CU04)
+    if (norm.includes('perfil') || norm.includes('contrasena')) {
+      if (navigation?.navigate) {
+        navigation.navigate('Profile');
+        return;
+      }
+    }
+
+    // 4. Funciones Web (Gestión masiva, proveedores, inventario, reportes)
+    setModalData({
+      visible: true,
+      title: f.nombre,
+      description: `Esta funcionalidad de gestión avanzada (${f.modulo}) está habilitada con nivel de acceso "${f.nivel_acceso || 'Lectura'}" en la plataforma Web ERP de FashionStore.\n\nEn esta versión móvil tienes habilitado el acceso al Catálogo Comercial de Prendas (CU10/CU11), Consulta de Stock en Sucursales y Asistente de Estilos con IA (CU26).`,
+      isWebOnly: true,
+    });
+  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -60,8 +98,62 @@ export default function AdminDashboardScreen() {
             Hola, {user?.empleado?.nombre || user?.email} 👋
           </Text>
           <Text style={styles.subtitle}>
-            Bienvenido al panel móvil interno. Aquí tienes acceso a tus funciones autorizadas según los permisos de tu cargo.
+            Bienvenido al panel móvil interno. Selecciona cualquier función asignada para navegar o consultar su estado.
           </Text>
+        </View>
+
+        {/* Accesos Rápidos Principales Móviles */}
+        <View style={styles.quickAccessSection}>
+          <Text style={styles.quickAccessTitle}>Accesos Rápidos Directos</Text>
+          <View style={styles.quickGrid}>
+            <TouchableOpacity
+              style={styles.quickCard}
+              activeOpacity={0.78}
+              onPress={() => navigation?.navigate('Catalog')}
+            >
+              <View style={[styles.quickIconCircle, { backgroundColor: '#F4ECE1' }]}>
+                <Text style={{ fontSize: 22 }}>👗</Text>
+              </View>
+              <Text style={styles.quickCardTitle}>Catálogo</Text>
+              <Text style={styles.quickCardSub}>CU10 / CU11</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.quickCard}
+              activeOpacity={0.78}
+              onPress={() => navigation?.navigate('Recommendations')}
+            >
+              <View style={[styles.quickIconCircle, { backgroundColor: '#EDE9FE' }]}>
+                <Text style={{ fontSize: 22 }}>✨</Text>
+              </View>
+              <Text style={styles.quickCardTitle}>Estilos IA</Text>
+              <Text style={styles.quickCardSub}>CU26</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.quickCard}
+              activeOpacity={0.78}
+              onPress={() => navigation?.navigate('Profile')}
+            >
+              <View style={[styles.quickIconCircle, { backgroundColor: '#E0F2FE' }]}>
+                <Text style={{ fontSize: 22 }}>👤</Text>
+              </View>
+              <Text style={styles.quickCardTitle}>Mi Perfil</Text>
+              <Text style={styles.quickCardSub}>CU03 / CU04</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.quickCard}
+              activeOpacity={0.78}
+              onPress={() => navigation?.navigate('Cart')}
+            >
+              <View style={[styles.quickIconCircle, { backgroundColor: '#DCFCE7' }]}>
+                <Text style={{ fontSize: 22 }}>🛒</Text>
+              </View>
+              <Text style={styles.quickCardTitle}>Mi Bolsa</Text>
+              <Text style={styles.quickCardSub}>Compras</Text>
+            </TouchableOpacity>
+          </View>
         </View>
 
         {/* Resumen de permisos */}
@@ -111,17 +203,17 @@ export default function AdminDashboardScreen() {
 
         {/* Sección de Módulos y Funciones */}
         <View style={styles.sectionContainer}>
-          <Text style={styles.sectionTitle}>Tus Módulos Asignados</Text>
+          <Text style={styles.sectionTitle}>Tus Módulos y Funciones Autorizadas</Text>
           <Text style={styles.sectionSubtitle}>
-            Herramientas y funciones disponibles para tu rol en la versión móvil:
+            Toca cualquiera de las funciones para acceder o consultar su disponibilidad:
           </Text>
 
           {modulesMap.size === 0 ? (
             <View style={styles.emptyCard}>
               <Text style={{ fontSize: 32, marginBottom: 8 }}>🔒</Text>
-              <Text style={styles.emptyTitle}>Sin funciones móviles adicionales</Text>
+              <Text style={styles.emptyTitle}>Sin funciones configuradas</Text>
               <Text style={styles.emptyText}>
-                Tus permisos asignados corresponden a módulos de gestión web o no tienes funciones operativas adicionales configuradas.
+                No tienes funciones operativas adicionales configuradas para este rol.
               </Text>
             </View>
           ) : (
@@ -132,30 +224,38 @@ export default function AdminDashboardScreen() {
                   <View style={{ flex: 1, marginLeft: 10 }}>
                     <Text style={styles.moduleTitle}>{modulo.replace('Gestión de ', '')}</Text>
                     <Text style={styles.moduleSubtitle}>
-                      {funcs.length} {funcs.length === 1 ? 'función asignada' : 'funciones asignadas'}
+                      {funcs.length} {funcs.length === 1 ? 'función' : 'funciones'} autorizadas
                     </Text>
                   </View>
                 </View>
 
                 <View style={styles.functionList}>
                   {funcs.map((f) => (
-                    <View key={f.nombre} style={styles.functionItem}>
+                    <TouchableOpacity
+                      key={f.nombre}
+                      style={styles.functionItem}
+                      activeOpacity={0.72}
+                      onPress={() => handleFunctionPress(f)}
+                    >
                       <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
                         <Text style={styles.functionDot}>•</Text>
                         <Text style={styles.functionName}>{f.nombre}</Text>
                       </View>
-                      <View style={[
-                        styles.accessBadge,
-                        f.nivel_acceso?.toLowerCase() === 'edicion' ? styles.badgeEdicion : styles.badgeLectura
-                      ]}>
-                        <Text style={[
-                          styles.accessBadgeText,
-                          f.nivel_acceso?.toLowerCase() === 'edicion' ? styles.badgeEdicionText : styles.badgeLecturaText
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                        <View style={[
+                          styles.accessBadge,
+                          f.nivel_acceso?.toLowerCase() === 'edicion' ? styles.badgeEdicion : styles.badgeLectura
                         ]}>
-                          {f.nivel_acceso || 'Lectura'}
-                        </Text>
+                          <Text style={[
+                            styles.accessBadgeText,
+                            f.nivel_acceso?.toLowerCase() === 'edicion' ? styles.badgeEdicionText : styles.badgeLecturaText
+                          ]}>
+                            {f.nivel_acceso || 'Lectura'}
+                          </Text>
+                        </View>
+                        <Text style={styles.chevronIcon}>›</Text>
                       </View>
-                    </View>
+                    </TouchableOpacity>
                   ))}
                 </View>
               </View>
@@ -164,6 +264,43 @@ export default function AdminDashboardScreen() {
         </View>
 
       </ScrollView>
+
+      {/* Modal Informativo para Operaciones */}
+      {modalData && (
+        <Modal
+          visible={modalData.visible}
+          transparent
+          animationType="fade"
+          onRequestClose={() => setModalData(null)}
+        >
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalContent}>
+              <View style={styles.modalHeader}>
+                <Text style={styles.modalIcon}>💻</Text>
+                <Text style={styles.modalTitle}>{modalData.title}</Text>
+              </View>
+              <Text style={styles.modalDescription}>{modalData.description}</Text>
+              <View style={styles.modalActions}>
+                <TouchableOpacity
+                  style={styles.modalSecondaryBtn}
+                  onPress={() => setModalData(null)}
+                >
+                  <Text style={styles.modalSecondaryBtnText}>Cerrar</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.modalPrimaryBtn}
+                  onPress={() => {
+                    setModalData(null);
+                    navigation?.navigate('Catalog');
+                  }}
+                >
+                  <Text style={styles.modalPrimaryBtnText}>Ir al Catálogo</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </Modal>
+      )}
     </SafeAreaView>
   );
 }
@@ -372,5 +509,125 @@ const styles = StyleSheet.create({
   accessBadgeText: {
     fontSize: 10,
     fontWeight: 'bold',
+  },
+  chevronIcon: {
+    fontSize: 18,
+    color: '#9CA3AF',
+    fontWeight: 'bold',
+    marginLeft: 2,
+  },
+  quickAccessSection: {
+    marginBottom: 20,
+  },
+  quickAccessTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#1A1A1A',
+    marginBottom: 10,
+  },
+  quickGrid: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: 8,
+  },
+  quickCard: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 8,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  quickIconCircle: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 6,
+  },
+  quickCardTitle: {
+    fontSize: 12,
+    fontWeight: 'bold',
+    color: '#1A1A1A',
+    textAlign: 'center',
+  },
+  quickCardSub: {
+    fontSize: 10,
+    color: '#9CA3AF',
+    textAlign: 'center',
+    marginTop: 2,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+  },
+  modalContent: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    padding: 24,
+    width: '100%',
+    maxWidth: 400,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 5,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    marginBottom: 12,
+  },
+  modalIcon: {
+    fontSize: 28,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#1A1A1A',
+    flex: 1,
+  },
+  modalDescription: {
+    fontSize: 14,
+    color: '#4B5563',
+    lineHeight: 20,
+    marginBottom: 20,
+  },
+  modalActions: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    gap: 10,
+  },
+  modalSecondaryBtn: {
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    backgroundColor: '#F3F4F6',
+  },
+  modalSecondaryBtnText: {
+    color: '#4B5563',
+    fontWeight: '600',
+    fontSize: 14,
+  },
+  modalPrimaryBtn: {
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    backgroundColor: '#1A1A1A',
+  },
+  modalPrimaryBtnText: {
+    color: '#FFFFFF',
+    fontWeight: '600',
+    fontSize: 14,
   },
 });
