@@ -13,6 +13,10 @@ import { useAuth } from '../../modules/users-security/shared/AuthContext';
 
 const { width } = Dimensions.get('window');
 const isTablet = width >= 768;
+const mobileUseCaseIds = new Set([2, 3, 8, 9, 12, 14, 20]);
+
+const normalize = (value: string) =>
+  value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
 
 const getModuleIcon = (modulo: string) => {
   const norm = modulo.toLowerCase();
@@ -27,6 +31,7 @@ const getModuleIcon = (modulo: string) => {
 
 export default function AdminDashboardScreen({ navigation }: any) {
   const { user, rol, funciones } = useAuth();
+  const [openModules, setOpenModules] = useState<Record<string, boolean>>({});
   const [modalData, setModalData] = useState<{
     visible: boolean;
     title: string;
@@ -34,10 +39,14 @@ export default function AdminDashboardScreen({ navigation }: any) {
     isWebOnly: boolean;
   } | null>(null);
 
+  const toggleModule = (modulo: string) => {
+    setOpenModules(prev => ({ ...prev, [modulo]: !prev[modulo] }));
+  };
+
   // Filtrar funciones activas (acceso !== 'Ninguno')
   const allowedFunciones = funciones.filter(f => {
-    const access = (f.nivel_acceso || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
-    return access !== 'ninguno' && access !== '';
+    const access = normalize(f.nivel_acceso || '');
+    return mobileUseCaseIds.has(f.id_funcion) && access !== 'ninguno' && access !== '';
   });
 
   // Agrupar funciones por módulo
@@ -48,10 +57,10 @@ export default function AdminDashboardScreen({ navigation }: any) {
   });
 
   const handleFunctionPress = (f: { nombre: string; modulo: string; nivel_acceso: string }) => {
-    const norm = f.nombre.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
-    const modNorm = f.modulo.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
+    const norm = normalize(f.nombre);
+    const modNorm = normalize(f.modulo);
 
-    // 1. Catálogo y prendas (CU10 / CU11)
+    // 1. Catálogo y prendas (CU08 / CU09)
     if (norm.includes('catalogo') || norm.includes('producto') || norm.includes('categoria') || norm.includes('variante') || modNorm.includes('catalogo')) {
       if (navigation?.navigate) {
         navigation.navigate('Catalog');
@@ -59,7 +68,7 @@ export default function AdminDashboardScreen({ navigation }: any) {
       }
     }
 
-    // 2. IA y recomendaciones (CU26)
+    // 2. IA y recomendaciones (CU12)
     if (norm.includes('ia') || norm.includes('recomendacion') || norm.includes('vestidor') || modNorm.includes('ia') || modNorm.includes('realidad')) {
       if (navigation?.navigate) {
         navigation.navigate('Recommendations');
@@ -67,10 +76,24 @@ export default function AdminDashboardScreen({ navigation }: any) {
       }
     }
 
-    // 3. Perfil y usuario (CU03 / CU04)
+    // 3. Perfil y contraseña (CU02 / CU03)
     if (norm.includes('perfil') || norm.includes('contrasena')) {
       if (navigation?.navigate) {
         navigation.navigate('Profile');
+        return;
+      }
+    }
+
+    if (norm.includes('sucursal')) {
+      if (navigation?.navigate) {
+        navigation.navigate('Branches');
+        return;
+      }
+    }
+
+    if (norm.includes('carrito')) {
+      if (navigation?.navigate) {
+        navigation.navigate('Cart');
         return;
       }
     }
@@ -79,7 +102,7 @@ export default function AdminDashboardScreen({ navigation }: any) {
     setModalData({
       visible: true,
       title: f.nombre,
-      description: `Esta funcionalidad de gestión avanzada (${f.modulo}) está habilitada con nivel de acceso "${f.nivel_acceso || 'Lectura'}" en la plataforma Web ERP de FashionStore.\n\nEn esta versión móvil tienes habilitado el acceso al Catálogo Comercial de Prendas (CU10/CU11), Consulta de Stock en Sucursales y Asistente de Estilos con IA (CU26).`,
+      description: `Esta funcionalidad de gestión avanzada (${f.modulo}) está habilitada con nivel de acceso "${f.nivel_acceso || 'Lectura'}" en la plataforma Web ERP de FashionStore.\n\nEn esta versión móvil tienes habilitado el acceso al Catálogo Comercial de Prendas (CU08/CU09), Consulta de Sucursales (CU14), Carrito (CU20) y Asistente de Estilos con IA (CU12).`,
       isWebOnly: true,
     });
   };
@@ -115,7 +138,7 @@ export default function AdminDashboardScreen({ navigation }: any) {
                 <Text style={{ fontSize: 22 }}>👗</Text>
               </View>
               <Text style={styles.quickCardTitle}>Catálogo</Text>
-              <Text style={styles.quickCardSub}>CU10 / CU11</Text>
+              <Text style={styles.quickCardSub}>CU08 / CU09</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -127,7 +150,7 @@ export default function AdminDashboardScreen({ navigation }: any) {
                 <Text style={{ fontSize: 22 }}>✨</Text>
               </View>
               <Text style={styles.quickCardTitle}>Estilos IA</Text>
-              <Text style={styles.quickCardSub}>CU26</Text>
+              <Text style={styles.quickCardSub}>CU12</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -139,7 +162,7 @@ export default function AdminDashboardScreen({ navigation }: any) {
                 <Text style={{ fontSize: 22 }}>👤</Text>
               </View>
               <Text style={styles.quickCardTitle}>Mi Perfil</Text>
-              <Text style={styles.quickCardSub}>CU03 / CU04</Text>
+              <Text style={styles.quickCardSub}>CU02 / CU03</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -217,49 +240,63 @@ export default function AdminDashboardScreen({ navigation }: any) {
               </Text>
             </View>
           ) : (
-            Array.from(modulesMap.entries()).map(([modulo, funcs]) => (
-              <View key={modulo} style={styles.moduleCard}>
-                <View style={styles.moduleHeader}>
-                  <Text style={{ fontSize: 20 }}>{getModuleIcon(modulo)}</Text>
-                  <View style={{ flex: 1, marginLeft: 10 }}>
-                    <Text style={styles.moduleTitle}>{modulo.replace('Gestión de ', '')}</Text>
-                    <Text style={styles.moduleSubtitle}>
-                      {funcs.length} {funcs.length === 1 ? 'función' : 'funciones'} autorizadas
-                    </Text>
-                  </View>
-                </View>
+            Array.from(modulesMap.entries()).map(([modulo, funcs]) => {
+              const isOpen = !!openModules[modulo];
+              return (
+                <View key={modulo} style={[styles.moduleCard, isOpen && styles.moduleCardOpen]}>
+                  <TouchableOpacity
+                    style={[styles.moduleHeader, !isOpen && styles.moduleHeaderClosed]}
+                    activeOpacity={0.7}
+                    onPress={() => toggleModule(modulo)}
+                  >
+                    <Text style={{ fontSize: 20 }}>{getModuleIcon(modulo)}</Text>
+                    <View style={{ flex: 1, marginLeft: 10 }}>
+                      <Text style={styles.moduleTitle}>{modulo.replace('Gestión de ', '')}</Text>
+                      <Text style={styles.moduleSubtitle}>
+                        {funcs.length} {funcs.length === 1 ? 'función' : 'funciones'} autorizadas
+                      </Text>
+                    </View>
+                    <View style={[styles.moduleToggleBadge, isOpen && styles.moduleToggleBadgeOpen]}>
+                      <Text style={[styles.moduleToggleText, isOpen && styles.moduleToggleTextOpen]}>
+                        {isOpen ? 'Ocultar ▲' : 'Abrir ▼'}
+                      </Text>
+                    </View>
+                  </TouchableOpacity>
 
-                <View style={styles.functionList}>
-                  {funcs.map((f) => (
-                    <TouchableOpacity
-                      key={f.nombre}
-                      style={styles.functionItem}
-                      activeOpacity={0.72}
-                      onPress={() => handleFunctionPress(f)}
-                    >
-                      <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
-                        <Text style={styles.functionDot}>•</Text>
-                        <Text style={styles.functionName}>{f.nombre}</Text>
-                      </View>
-                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                        <View style={[
-                          styles.accessBadge,
-                          f.nivel_acceso?.toLowerCase() === 'edicion' ? styles.badgeEdicion : styles.badgeLectura
-                        ]}>
-                          <Text style={[
-                            styles.accessBadgeText,
-                            f.nivel_acceso?.toLowerCase() === 'edicion' ? styles.badgeEdicionText : styles.badgeLecturaText
-                          ]}>
-                            {f.nivel_acceso || 'Lectura'}
-                          </Text>
-                        </View>
-                        <Text style={styles.chevronIcon}>›</Text>
-                      </View>
-                    </TouchableOpacity>
-                  ))}
+                  {isOpen && (
+                    <View style={styles.functionList}>
+                      {funcs.map((f) => (
+                        <TouchableOpacity
+                          key={f.nombre}
+                          style={styles.functionItem}
+                          activeOpacity={0.72}
+                          onPress={() => handleFunctionPress(f)}
+                        >
+                          <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
+                            <Text style={styles.functionDot}>•</Text>
+                            <Text style={styles.functionName}>{f.nombre}</Text>
+                          </View>
+                          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                            <View style={[
+                              styles.accessBadge,
+                              f.nivel_acceso?.toLowerCase() === 'edicion' ? styles.badgeEdicion : styles.badgeLectura
+                            ]}>
+                              <Text style={[
+                                styles.accessBadgeText,
+                                f.nivel_acceso?.toLowerCase() === 'edicion' ? styles.badgeEdicionText : styles.badgeLecturaText
+                              ]}>
+                                {f.nivel_acceso || 'Lectura'}
+                              </Text>
+                            </View>
+                            <Text style={styles.chevronIcon}>›</Text>
+                          </View>
+                        </TouchableOpacity>
+                      ))}
+                    </View>
+                  )}
                 </View>
-              </View>
-            ))
+              );
+            })
           )}
         </View>
 
@@ -441,6 +478,10 @@ const styles = StyleSheet.create({
     shadowRadius: 2,
     elevation: 2,
   },
+  moduleCardOpen: {
+    borderColor: '#C4956A',
+    shadowOpacity: 0.08,
+  },
   moduleHeader: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -448,6 +489,29 @@ const styles = StyleSheet.create({
     paddingBottom: 8,
     borderBottomWidth: 1,
     borderBottomColor: '#F0ECE6',
+  },
+  moduleHeaderClosed: {
+    marginBottom: 0,
+    paddingBottom: 0,
+    borderBottomWidth: 0,
+  },
+  moduleToggleBadge: {
+    backgroundColor: '#F5F5F5',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+    marginLeft: 6,
+  },
+  moduleToggleBadgeOpen: {
+    backgroundColor: '#F4ECE1',
+  },
+  moduleToggleText: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: '#736B63',
+  },
+  moduleToggleTextOpen: {
+    color: '#8C5E35',
   },
   moduleTitle: {
     fontSize: 16,

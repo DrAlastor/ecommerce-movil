@@ -86,6 +86,13 @@ export default function CatalogScreen({ navigation }: any) {
           <TouchableOpacity
             style={styles.iconBtn}
             activeOpacity={0.75}
+            onPress={() => navigation.navigate('Branches')}
+          >
+            <Text style={styles.iconText}>📍</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.iconBtn}
+            activeOpacity={0.75}
             onPress={() => navigation.navigate('Recommendations')}
           >
             <Text style={styles.iconText}>IA</Text>

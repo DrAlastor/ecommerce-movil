@@ -2,13 +2,15 @@ import React from 'react';
 import { createDrawerNavigator, DrawerContentScrollView, DrawerItemList } from '@react-navigation/drawer';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import AdminDashboardScreen from '../../pages/admin/AdminDashboardScreen';
-import ProfileScreen from '../../modules/users-security/use-cases/CU03-gestionar-perfil/screens/ProfileScreen';
-import CatalogScreen from '../../modules/catalog/use-cases/CU10-consultar-catalogo-productos/screens/CatalogScreen';
-import { ProductDetailScreen } from '../../modules/catalog/use-cases/CU11-consultar-detalle-disponibilidad/screens/ProductDetailScreen';
-import RecommendationsScreen from '../../modules/catalog/use-cases/CU26-obtener-recomendaciones-ia/screens/RecommendationsScreen';
+import ProfileScreen from '../../modules/users-security/use-cases/CU02-gestionar-perfil/screens/ProfileScreen';
+import CatalogScreen from '../../modules/catalog/use-cases/CU08-consultar-catalogo-productos/screens/CatalogScreen';
+import { ProductDetailScreen } from '../../modules/catalog/use-cases/CU09-consultar-detalle-disponibilidad/screens/ProductDetailScreen';
+import RecommendationsScreen from '../../modules/catalog/use-cases/CU12-obtener-recomendaciones-ia/screens/RecommendationsScreen';
 import CartScreen from '../../modules/shop/use-cases/CU11-gestionar-carrito/screens/CartScreen';
 import WishlistScreen from '../../modules/shop/use-cases/CU12-lista-deseos/screens/WishlistScreen';
+import BranchesScreen from '../../modules/branches-inventory/screens/BranchesScreen';
 import { useAuth } from '../../modules/users-security/shared/AuthContext';
+
 
 const Drawer = createDrawerNavigator();
 
@@ -58,26 +60,34 @@ export default function AdminNavigator() {
         options={{ title: '📊 Panel de Control' }} 
       />
 
-      {/* CU10: Consultar catálogo de productos */}
+      {/* CU08: Consultar catálogo de productos */}
       <Drawer.Screen 
         name="Catalog" 
         component={CatalogScreen} 
         options={{ title: '👗 Catálogo de Prendas', headerShown: false }} 
       />
 
-      {/* CU26: Obtener recomendaciones de prendas mediante IA */}
+      {/* CU12: Obtener recomendaciones de prendas mediante IA */}
       <Drawer.Screen 
         name="Recommendations" 
         component={RecommendationsScreen} 
         options={{ title: '✨ Asistente IA / Estilos' }} 
       />
 
-      {/* CU03: Gestionar Perfil */}
+      {/* CU02: Registrar y gestionar perfil de cliente */}
       <Drawer.Screen 
         name="Profile" 
         component={ProfileScreen} 
         options={{ title: '👤 Mi Perfil' }} 
       />
+
+      {/* CU14: Consultar sucursales */}
+      <Drawer.Screen 
+        name="Branches" 
+        component={BranchesScreen} 
+        options={{ title: '📍 Nuestras Sucursales', headerShown: false }} 
+      />
+
 
       <Drawer.Screen 
         name="Cart" 
@@ -91,7 +101,7 @@ export default function AdminNavigator() {
         options={{ title: '♥ Mis Favoritos' }} 
       />
 
-      {/* CU11: Detalle de Producto (navegable desde Catálogo) */}
+      {/* CU09: Detalle de producto (navegable desde catálogo) */}
       <Drawer.Screen 
         name="ProductDetail" 
         component={ProductDetailScreen} 
