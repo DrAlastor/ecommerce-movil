@@ -29,9 +29,14 @@ import ResetPasswordScreen from './src/modules/users-security/use-cases/CU03-ges
 import CatalogScreen from './src/modules/catalog/use-cases/CU08-consultar-catalogo-productos/screens/CatalogScreen';
 import { ProductDetailScreen } from './src/modules/catalog/use-cases/CU09-consultar-detalle-disponibilidad/screens/ProductDetailScreen';
 import RecommendationsScreen from './src/modules/catalog/use-cases/CU12-obtener-recomendaciones-ia/screens/RecommendationsScreen';
-import CartScreen from './src/modules/shop/use-cases/CU11-gestionar-carrito/screens/CartScreen';
+import {
+  CartScreen,
+  CheckoutScreen,
+  MyPurchasesScreen,
+} from './src/modules/sales-billing';
 import WishlistScreen from './src/modules/shop/use-cases/CU12-lista-deseos/screens/WishlistScreen';
-import BranchesScreen from './src/modules/branches-inventory/screens/BranchesScreen';
+import BranchesScreen from './src/modules/branches-inventory/use-cases/CU14-consultar-sucursales/screens/BranchesScreen';
+import { MyReservationsScreen } from './src/modules/reservations';
 
 
 
@@ -42,10 +47,13 @@ type RootStackParamList = {
   Register: undefined;
   Profile: undefined;
   Cart: undefined;
+  Checkout: undefined;
+  MyPurchases: undefined;
   Wishlist: undefined;
   ProductDetail: { id_producto: number; product?: any };
   Recommendations: undefined;
   Branches: { selectMode?: boolean; onSelectBranch?: (branch: any) => void } | undefined;
+  MyReservations: undefined;
   ForgotPassword: undefined;
   ResetPassword: { email?: string; token?: string } | undefined;
 };
@@ -106,9 +114,12 @@ function RootNavigator() {
       <RootStack.Screen name="ProductDetail" component={ProductDetailScreen} />
       <RootStack.Screen name="Recommendations" component={RecommendationsScreen} />
       <RootStack.Screen name="Cart" component={CartScreen} />
+      <RootStack.Screen name="Checkout" component={CheckoutScreen} />
+      <RootStack.Screen name="MyPurchases" component={MyPurchasesScreen} />
       <RootStack.Screen name="Wishlist" component={WishlistScreen} />
       <RootStack.Screen name="Branches" component={BranchesScreen} />
       <RootStack.Screen name="Profile" component={ProfileScreen} />
+      <RootStack.Screen name="MyReservations" component={MyReservationsScreen} />
       {!isAuthenticated && (
         <>
           <RootStack.Screen name="Login" component={LoginScreen} />

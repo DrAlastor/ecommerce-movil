@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -15,6 +15,11 @@ import { MobileVariantSelector } from '../components/MobileVariantSelector';
 import { MobileBranchStockSheet } from '../components/MobileBranchStockSheet';
 import { MobileSizeGuideModal } from '../components/MobileSizeGuideModal';
 import { VirtualFittingButton } from '../components/VirtualFittingButton';
+import {
+  MobileReservationModal,
+  MobileReservationReceiptModal,
+  type ReservationReceipt,
+} from '../../../../reservations';
 import { useShop } from '../../../../../shared/context/ShopContext';
 
 interface ProductDetailScreenProps {
@@ -30,6 +35,9 @@ export const ProductDetailScreen: React.FC<ProductDetailScreenProps> = ({
 }) => {
   const effectiveId = propId || route?.params?.id_producto || 1;
   const { cartItemCount, wishlistCount } = useShop();
+  const [reservationModalVisible, setReservationModalVisible] = useState<boolean>(false);
+  const [receiptModalVisible, setReceiptModalVisible] = useState<boolean>(false);
+  const [receiptData, setReceiptData] = useState<ReservationReceipt | null>(null);
 
   const {
     product,
@@ -237,6 +245,16 @@ export const ProductDetailScreen: React.FC<ProductDetailScreenProps> = ({
         </View>
 
         <TouchableOpacity
+          style={[styles.reserveBtn, !isAvailable && styles.reserveBtnDisabled]}
+          onPress={() => setReservationModalVisible(true)}
+          disabled={!isAvailable}
+          activeOpacity={0.85}
+        >
+          <Text style={{ fontSize: 14 }}>📅</Text>
+          <Text style={styles.reserveBtnText}>Reservar</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
           style={[styles.addToCartBtn, !isAvailable && styles.addToCartBtnDisabled]}
           onPress={handleAdd}
           disabled={!isAvailable}
@@ -264,6 +282,37 @@ export const ProductDetailScreen: React.FC<ProductDetailScreenProps> = ({
         selectedTalla={selectedVariant?.talla.codigo}
         selectedColor={selectedVariant?.color.nombre}
         onClose={() => setBranchStockVisible(false)}
+      />
+
+      {/* Modal de Reserva CU17 */}
+      {selectedVariant && (
+        <MobileReservationModal
+          visible={reservationModalVisible}
+          onClose={() => setReservationModalVisible(false)}
+          product={product}
+          selectedVariant={selectedVariant}
+          onReservationSuccess={(receipt) => {
+            setReservationModalVisible(false);
+            setReceiptData(receipt);
+            setReceiptModalVisible(true);
+          }}
+          onRequireLogin={() => {
+            (navigation as any)?.navigate('Login');
+          }}
+        />
+      )}
+
+      {/* Comprobante de Reserva CU17 */}
+      <MobileReservationReceiptModal
+        visible={receiptModalVisible}
+        receipt={receiptData}
+        onClose={() => {
+          setReceiptModalVisible(false);
+          setReceiptData(null);
+        }}
+        onViewMyReservations={() => {
+          (navigation as any)?.navigate('MyReservations');
+        }}
       />
     </SafeAreaView>
   );
@@ -554,5 +603,26 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontWeight: '700',
     fontSize: 14,
+  },
+  reserveBtn: {
+    height: 48,
+    paddingHorizontal: 14,
+    backgroundColor: '#FAF5EF',
+    borderWidth: 1.5,
+    borderColor: '#D97706',
+    borderRadius: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 4,
+  },
+  reserveBtnDisabled: {
+    borderColor: '#D1D5DB',
+    backgroundColor: '#F3F4F6',
+  },
+  reserveBtnText: {
+    color: '#B45309',
+    fontWeight: '700',
+    fontSize: 13,
   },
 });

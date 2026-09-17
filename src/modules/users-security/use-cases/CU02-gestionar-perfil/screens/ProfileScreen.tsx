@@ -165,6 +165,44 @@ export default function ProfileScreen({ navigation }: any) {
             <Text style={styles.emailText}>{user?.email}</Text>
           </View>
 
+          {!isEmpleado && (
+            <>
+              <TouchableOpacity
+                style={styles.reservationsCard}
+                onPress={() => navigation.navigate('MyPurchases')}
+                activeOpacity={0.8}
+              >
+                <View style={styles.reservationsCardContent}>
+                  <View style={[styles.reservationsIconBadge, { backgroundColor: '#F4ECE4' }]}>
+                    <Text style={styles.reservationsBadgeIcon}>🛍️</Text>
+                  </View>
+                  <View style={{ flex: 1, marginLeft: 12 }}>
+                    <Text style={styles.reservationsTitle}>Mis Compras y Facturas</Text>
+                    <Text style={styles.reservationsSubtitle}>Historial de compras, pagos y comprobantes</Text>
+                  </View>
+                  <Text style={styles.reservationsArrow}>›</Text>
+                </View>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.reservationsCard}
+                onPress={() => navigation.navigate('MyReservations')}
+                activeOpacity={0.8}
+              >
+                <View style={styles.reservationsCardContent}>
+                  <View style={styles.reservationsIconBadge}>
+                    <Text style={styles.reservationsBadgeIcon}>📅</Text>
+                  </View>
+                  <View style={{ flex: 1, marginLeft: 12 }}>
+                    <Text style={styles.reservationsTitle}>Mis Reservas de Prendas</Text>
+                    <Text style={styles.reservationsSubtitle}>Consulta el estado y gestiona tus reservas</Text>
+                  </View>
+                  <Text style={styles.reservationsArrow}>›</Text>
+                </View>
+              </TouchableOpacity>
+            </>
+          )}
+
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Datos Personales</Text>
 
@@ -351,4 +389,48 @@ const styles = StyleSheet.create({
   textArea: { minHeight: 80, textAlignVertical: 'top' },
   saveBtn: { backgroundColor: '#1A1A1A', borderRadius: 8, paddingVertical: 16, alignItems: 'center' },
   saveBtnText: { color: '#FFFFFF', fontSize: 16, fontWeight: 'bold' },
+  reservationsCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 20,
+    borderWidth: 1,
+    borderColor: '#E8E8E8',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  reservationsCardContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  reservationsIconBadge: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: '#F3EFEA',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  reservationsBadgeIcon: {
+    fontSize: 22,
+  },
+  reservationsTitle: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#1A1A1A',
+  },
+  reservationsSubtitle: {
+    fontSize: 12,
+    color: '#6B6B6B',
+    marginTop: 2,
+  },
+  reservationsArrow: {
+    fontSize: 22,
+    color: '#8C827A',
+    fontWeight: '300',
+    paddingLeft: 8,
+  },
 });

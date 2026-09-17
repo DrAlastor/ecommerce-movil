@@ -6,9 +6,13 @@ import ProfileScreen from '../../modules/users-security/use-cases/CU02-gestionar
 import CatalogScreen from '../../modules/catalog/use-cases/CU08-consultar-catalogo-productos/screens/CatalogScreen';
 import { ProductDetailScreen } from '../../modules/catalog/use-cases/CU09-consultar-detalle-disponibilidad/screens/ProductDetailScreen';
 import RecommendationsScreen from '../../modules/catalog/use-cases/CU12-obtener-recomendaciones-ia/screens/RecommendationsScreen';
-import CartScreen from '../../modules/shop/use-cases/CU11-gestionar-carrito/screens/CartScreen';
+import {
+  CartScreen,
+  CheckoutScreen,
+  MyPurchasesScreen,
+} from '../../modules/sales-billing';
 import WishlistScreen from '../../modules/shop/use-cases/CU12-lista-deseos/screens/WishlistScreen';
-import BranchesScreen from '../../modules/branches-inventory/screens/BranchesScreen';
+import BranchesScreen from '../../modules/branches-inventory/use-cases/CU14-consultar-sucursales/screens/BranchesScreen';
 import { useAuth } from '../../modules/users-security/shared/AuthContext';
 
 
@@ -93,6 +97,22 @@ export default function AdminNavigator() {
         name="Cart" 
         component={CartScreen} 
         options={{ title: '🛒 Bolsa de Compras' }} 
+      />
+
+      <Drawer.Screen 
+        name="MyPurchases" 
+        component={MyPurchasesScreen} 
+        options={{ title: '🛍️ Mis Compras' }} 
+      />
+
+      <Drawer.Screen 
+        name="Checkout" 
+        component={CheckoutScreen} 
+        options={{ 
+          title: 'Finalizar Compra',
+          drawerItemStyle: { display: 'none' },
+          headerShown: false,
+        }} 
       />
 
       <Drawer.Screen 

@@ -125,6 +125,15 @@ export default function CatalogScreen({ navigation }: any) {
             <TouchableOpacity
               style={styles.iconBtn}
               activeOpacity={0.75}
+              onPress={() => navigation.navigate('MyReservations')}
+            >
+              <Text style={styles.iconText}>📅</Text>
+            </TouchableOpacity>
+          )}
+          {isAuthenticated && (
+            <TouchableOpacity
+              style={styles.iconBtn}
+              activeOpacity={0.75}
               onPress={() => navigation.navigate('Profile')}
             >
               <Text style={styles.iconText}>👤</Text>
