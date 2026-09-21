@@ -13,15 +13,33 @@ export interface PaymentCardData {
   cvc?: string;
 }
 
+export interface NuevaDireccionPayload {
+  destinatario: string;
+  telefono: string;
+  calle: string;
+  detalle?: string;
+  id_ciudad: number;
+}
+
 export interface ProcessDigitalPurchaseInput {
-  direccion_envio: DeliveryAddress;
-  metodo_pago: 'tarjeta' | 'qr' | 'transferencia';
-  datos_pago?: PaymentCardData;
+  metodo_pago: 'stripe' | 'qr' | 'transferencia';
+  tipo_entrega: 'domicilio' | 'retiro_sucursal';
+  id_direccion?: number;
+  nueva_direccion?: NuevaDireccionPayload;
+  id_sucursal_retiro?: number;
+  transaccion_externa?: string;
+  nit_factura?: string;
+  razon_social_factura?: string;
 }
 
 export interface DigitalPurchaseResult {
-  success: boolean;
-  message: string;
+  success?: boolean;
+  message?: string;
+  id_venta: number;
+  codigo_factura?: string;
+  tipo_venta?: string;
+  estado?: string;
+  total?: number;
   venta?: {
     id_venta: number;
     codigo_venta: string;

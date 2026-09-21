@@ -13,6 +13,7 @@ import {
 } from '../../modules/sales-billing';
 import WishlistScreen from '../../modules/shop/use-cases/CU12-lista-deseos/screens/WishlistScreen';
 import BranchesScreen from '../../modules/branches-inventory/use-cases/CU14-consultar-sucursales/screens/BranchesScreen';
+import { VirtualFittingScreen } from '../../modules/mobile-experience';
 import { useAuth } from '../../modules/users-security/shared/AuthContext';
 
 
@@ -128,6 +129,16 @@ export default function AdminNavigator() {
         options={{ 
           title: 'Detalle de Prenda',
           drawerItemStyle: { display: 'none' },
+          headerShown: false,
+        }} 
+      />
+
+      {/* CU25: Utilizar vestidor virtual */}
+      <Drawer.Screen 
+        name="VirtualFitting" 
+        component={VirtualFittingScreen} 
+        options={{ 
+          title: '👗 Vestidor Virtual 3D', 
           headerShown: false,
         }} 
       />

@@ -1,28 +1,42 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ActivityIndicator } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import api from '../../../../../services/api';
+import { useAlert } from '../../../../../shared/context/AlertContext';
 
 export default function ForgotPasswordScreen() {
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const navigation = useNavigation<any>();
+  const { showAlert } = useAlert();
 
   const handleForgot = async () => {
     if (!email.trim()) {
-      Alert.alert('Error', 'Por favor ingresa tu correo electrónico.');
+      showAlert({
+        title: 'Correo Requerido',
+        message: 'Por favor ingresa tu correo electrónico.',
+        type: 'warning',
+      });
       return;
     }
 
     setLoading(true);
     try {
       await api.post('/auth/password/forgot', { email: email.trim() });
-      Alert.alert('Éxito', 'Se ha enviado un código de recuperación de 6 dígitos a tu correo.', [
-        { text: 'OK', onPress: () => navigation.navigate('ResetPassword', { email: email.trim() }) }
-      ]);
+      showAlert({
+        title: 'Código Enviado',
+        message: 'Se ha enviado un código de recuperación de 6 dígitos a tu correo.',
+        type: 'success',
+        primaryButtonText: 'Continuar',
+        onPrimaryPress: () => navigation.navigate('ResetPassword', { email: email.trim() }),
+      });
     } catch (error: any) {
-      Alert.alert('Error', error.response?.data?.message || 'Hubo un error al procesar tu solicitud.');
+      showAlert({
+        title: 'Error de Solicitud',
+        message: error.response?.data?.message || 'Hubo un error al procesar tu solicitud.',
+        type: 'error',
+      });
     } finally {
       setLoading(false);
     }

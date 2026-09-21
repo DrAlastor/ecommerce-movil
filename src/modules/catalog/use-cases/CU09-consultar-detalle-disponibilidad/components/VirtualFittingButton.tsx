@@ -1,26 +1,31 @@
 import React from 'react';
-import { TouchableOpacity, Text, StyleSheet, View, Alert } from 'react-native';
+import { TouchableOpacity, Text, StyleSheet, View } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
 
 interface VirtualFittingButtonProps {
   model3dUrl?: string | null;
+  productId?: number;
+  variantId?: number;
   onPress?: () => void;
 }
 
 export const VirtualFittingButton: React.FC<VirtualFittingButtonProps> = ({
   model3dUrl,
+  productId,
+  variantId,
   onPress,
 }) => {
+  const navigation = useNavigation<any>();
   if (!model3dUrl) return null;
 
   const handlePress = () => {
     if (onPress) {
       onPress();
-    } else {
-      Alert.alert(
-        'Vestidor Virtual 3D',
-        'Se iniciará el Caso de Uso CU24 — Utilizar vestidor virtual para probar esta prenda en tu avatar.',
-        [{ text: 'Entendido' }],
-      );
+    } else if (navigation) {
+      navigation.navigate('VirtualFitting', {
+        id_producto: productId,
+        variantId: variantId,
+      });
     }
   };
 

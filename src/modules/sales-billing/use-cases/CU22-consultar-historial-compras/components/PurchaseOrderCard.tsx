@@ -23,21 +23,27 @@ export function PurchaseOrderCard({ item, formatPrice, onViewReceipt }: Purchase
     return { bg: '#F3F4F6', text: '#4B5563', border: '#E5E7EB', label: status };
   };
 
-  const badge = getStatusBadgeStyle(item.estado_venta);
-  const dateFormatted = new Date(item.fecha).toLocaleDateString('es-ES', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  });
+  const badge = getStatusBadgeStyle(item.estado_venta || (item as any).estado || 'Pagada');
+  const rawDate = item.fecha || (item as any).fecha_venta;
+  const dateFormatted =
+    rawDate && !isNaN(new Date(rawDate).getTime())
+      ? new Date(rawDate).toLocaleDateString('es-ES', {
+          year: 'numeric',
+          month: 'short',
+          day: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit',
+        })
+      : 'Reciente';
 
   return (
     <View style={styles.orderCard}>
       {/* Cabecera de la Orden */}
       <View style={styles.cardHeader}>
         <View>
-          <Text style={styles.orderNumber}>Orden #{item.id_venta}</Text>
+          <Text style={styles.orderNumber}>
+            {item.codigo_factura ? item.codigo_factura : `Orden #${item.id_venta}`}
+          </Text>
           <Text style={styles.orderDate}>{dateFormatted}</Text>
         </View>
         <View style={[styles.statusBadge, { backgroundColor: badge.bg, borderColor: badge.border }]}>

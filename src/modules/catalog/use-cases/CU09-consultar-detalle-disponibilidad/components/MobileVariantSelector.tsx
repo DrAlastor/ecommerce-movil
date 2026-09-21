@@ -82,7 +82,9 @@ export const MobileVariantSelector: React.FC<MobileVariantSelectorProps> = ({
       {/* Selector de Talla */}
       <View style={styles.sectionBlock}>
         <View style={styles.headerRow}>
-          <Text style={styles.sectionLabel}>Talla:</Text>
+          <Text style={styles.sectionLabel}>
+            Talla: <Text style={styles.boldLabel}>{tallas.find((t) => t.id_talla === selectedTallaId)?.codigo || 'Elige una talla'}</Text>
+          </Text>
           {hasSizeGuide && (
             <TouchableOpacity onPress={onOpenSizeGuide} style={styles.guideTrigger} activeOpacity={0.7}>
               <Text style={styles.guideIcon}>📏</Text>

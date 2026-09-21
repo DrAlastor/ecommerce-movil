@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ActivityIndicator } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import api from '../../../../../services/api';
+import { useAlert } from '../../../../../shared/context/AlertContext';
 
 export default function ResetPasswordScreen() {
   const [token, setToken] = useState('');
@@ -13,31 +14,52 @@ export default function ResetPasswordScreen() {
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
   const emailParam = route.params?.email;
+  const { showAlert } = useAlert();
 
   const handleReset = async () => {
     if (!token.trim() || !newPassword || !confirmPassword) {
-      Alert.alert('Error', 'Por favor completa todos los campos.');
+      showAlert({
+        title: 'Campos Incompletos',
+        message: 'Por favor completa todos los campos requeridos.',
+        type: 'warning',
+      });
       return;
     }
 
     if (newPassword !== confirmPassword) {
-      Alert.alert('Error', 'Las contraseñas no coinciden.');
+      showAlert({
+        title: 'Contraseñas no coinciden',
+        message: 'Las contraseñas no coinciden.',
+        type: 'warning',
+      });
       return;
     }
 
     if (newPassword.length < 6) {
-      Alert.alert('Error', 'La nueva contraseña debe tener al menos 6 caracteres.');
+      showAlert({
+        title: 'Contraseña Corta',
+        message: 'La nueva contraseña debe tener al menos 6 caracteres.',
+        type: 'warning',
+      });
       return;
     }
 
     setLoading(true);
     try {
       await api.post('/auth/password/reset', { token: token.trim(), newPassword });
-      Alert.alert('Éxito', 'Tu contraseña ha sido restablecida exitosamente. Ahora puedes iniciar sesión.', [
-        { text: 'OK', onPress: () => navigation.navigate('Login') }
-      ]);
+      showAlert({
+        title: '¡Contraseña Restablecida!',
+        message: 'Tu contraseña ha sido restablecida exitosamente. Ahora puedes iniciar sesión con tus nuevas credenciales.',
+        type: 'success',
+        primaryButtonText: 'Iniciar Sesión',
+        onPrimaryPress: () => navigation.navigate('Login'),
+      });
     } catch (error: any) {
-      Alert.alert('Error', error.response?.data?.message || 'El código es inválido o expiró.');
+      showAlert({
+        title: 'Error de Verificación',
+        message: error.response?.data?.message || 'El código es inválido o expiró.',
+        type: 'error',
+      });
     } finally {
       setLoading(false);
     }

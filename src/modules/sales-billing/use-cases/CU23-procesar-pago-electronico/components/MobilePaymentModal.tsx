@@ -14,6 +14,7 @@ import { CreditCardForm } from './CreditCardForm';
 import { QrPaymentView } from './QrPaymentView';
 import { PaymentProcessingState } from './PaymentProcessingState';
 import { PaymentSuccessReceipt } from './PaymentSuccessReceipt';
+import { ElegantAlertModal } from '../../../../../shared/components/ElegantAlertModal';
 
 export function MobilePaymentModal(props: MobilePaymentModalProps) {
   const { visible, totalAmount, onNavigateHome, onNavigateOrders } = props;
@@ -28,6 +29,8 @@ export function MobilePaymentModal(props: MobilePaymentModalProps) {
     cvc,
     isProcessing,
     successResult,
+    alertConfig,
+    closeAlert,
     handleCardNumberChange,
     handleExpiryChange,
     handleCvcChange,
@@ -120,6 +123,22 @@ export function MobilePaymentModal(props: MobilePaymentModalProps) {
           </ScrollView>
         </View>
       </View>
+
+      <ElegantAlertModal
+        visible={alertConfig.visible}
+        type={alertConfig.type}
+        title={alertConfig.title}
+        message={alertConfig.message}
+        primaryButtonText={alertConfig.primaryText || 'Entendido'}
+        onPrimaryPress={() => {
+          if (alertConfig.onPrimaryPress) {
+            alertConfig.onPrimaryPress();
+          } else {
+            closeAlert();
+          }
+        }}
+        onClose={closeAlert}
+      />
     </Modal>
   );
 }

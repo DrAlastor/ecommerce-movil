@@ -5,24 +5,50 @@ export interface PurchaseItemDetail {
   cantidad: number;
   precio_unitario: number;
   subtotal: number;
+  sku?: string;
   talla?: string;
   color?: string;
+  imagen?: string;
 }
 
 export interface PurchaseHistoryItem {
   id_venta: number;
+  codigo_factura?: string;
   fecha: string;
+  fecha_venta?: string;
   total: number;
+  subtotal?: number;
+  descuento?: number;
   estado_venta: string;
+  estado?: string;
+  tipo_venta?: string;
   id_sucursal?: number;
   items_count: number;
+  total_articulos?: number;
   pago?: {
     id_pago: number;
     monto: number;
+    importe?: number;
     metodo: string;
+    metodo_pago?: string;
     transaccion_id?: string;
+    transaccion_externa?: string;
     estado: string;
+    fecha_pago?: string;
   };
+  envio?: {
+    id_envio: number;
+    numero_guia?: string;
+    transportista?: string;
+    estado?: string;
+    fecha_entrega?: string;
+    direccion?: {
+      destinatario?: string;
+      telefono?: string;
+      calle?: string;
+      ciudad?: string;
+    } | null;
+  } | null;
   factura?: {
     id_factura: number;
     numero_factura: string;

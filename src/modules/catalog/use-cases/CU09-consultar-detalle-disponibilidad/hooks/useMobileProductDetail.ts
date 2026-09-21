@@ -52,23 +52,67 @@ export function useMobileProductDetail(productId: number) {
 
   // Variante seleccionada
   const selectedVariant: MobileProductVariant | null = useMemo(() => {
-    if (!product || selectedColorId === null || selectedTallaId === null) return null;
-    return (
-      product.variantes.find(
+    if (!product || selectedColorId === null) return null;
+    if (selectedTallaId !== null) {
+      const exactMatch = product.variantes.find(
         (v) => v.color.id_color === selectedColorId && v.talla.id_talla === selectedTallaId,
-      ) || null
-    );
+      );
+      if (exactMatch) return exactMatch;
+    }
+    return product.variantes.find((v) => v.color.id_color === selectedColorId) || null;
   }, [product, selectedColorId, selectedTallaId]);
 
-  // Sincronizar imagen de la variante si existe
-  useEffect(() => {
-    if (selectedVariant?.imagen_url && product?.imagenes) {
-      const idx = product.imagenes.findIndex((img) => img.url === selectedVariant.imagen_url);
-      if (idx !== -1) {
-        setActiveImageIndex(idx);
+  // Lista dinámica de imágenes:
+  // - Posición 0: Imagen de la variante seleccionada (según color activo)
+  // - Posiciones siguientes: Galería de imágenes generales del producto
+  const galleryImages = useMemo(() => {
+    if (!product) return [];
+    const list = [...product.imagenes];
+    if (selectedVariant?.imagen_url) {
+      const existingIdx = list.findIndex((img) => img.url === selectedVariant.imagen_url);
+      if (existingIdx !== -1) {
+        const [found] = list.splice(existingIdx, 1);
+        list.unshift(found);
+      } else {
+        list.unshift({
+          id_imagen_producto: -selectedVariant.id_producto_variante,
+          url: selectedVariant.imagen_url,
+          texto_alternativo: `${product.nombre} - ${selectedVariant.color.nombre}`,
+          es_principal: true,
+          orden: 0,
+        });
       }
     }
-  }, [selectedVariant, product]);
+    return list;
+  }, [product, selectedVariant]);
+
+  // Manejador inteligente de cambio de color
+  const handleSelectColor = (colorId: number) => {
+    setSelectedColorId(colorId);
+    if (product) {
+      const validForColor = product.variantes.filter((v) => v.color.id_color === colorId);
+      const isCurrentTallaValid = validForColor.some((v) => v.talla.id_talla === selectedTallaId);
+      if (!isCurrentTallaValid && validForColor.length > 0) {
+        const inStock = validForColor.find((v) => v.total_stock > 0) || validForColor[0];
+        setSelectedTallaId(inStock.talla.id_talla);
+      }
+    }
+    // Al cambiar color, enfocar de inmediato la imagen de la variante
+    setActiveImageIndex(0);
+  };
+
+  // Manejador inteligente de cambio de talla
+  const handleSelectTalla = (tallaId: number) => {
+    setSelectedTallaId(tallaId);
+    if (product) {
+      const validForTalla = product.variantes.filter((v) => v.talla.id_talla === tallaId);
+      const isCurrentColorValid = validForTalla.some((v) => v.color.id_color === selectedColorId);
+      if (!isCurrentColorValid && validForTalla.length > 0) {
+        const inStock = validForTalla.find((v) => v.total_stock > 0) || validForTalla[0];
+        setSelectedColorId(inStock.color.id_color);
+      }
+    }
+  };
 
   const currentPrice = selectedVariant ? selectedVariant.precio_final : product?.precio_final_base || 0;
   const originalPrice = selectedVariant ? selectedVariant.precio_variante : product?.precio_base || 0;
@@ -86,7 +130,7 @@ export function useMobileProductDetail(productId: number) {
       originalPrice: hasDiscount ? originalPrice : undefined,
       rating: 4.8,
       reviewsCount: 12,
-      image: product.imagenes[activeImageIndex]?.url || product.imagenes[0]?.url || '',
+      image: galleryImages[activeImageIndex]?.url || galleryImages[0]?.url || '',
       isNew: Boolean(product.coleccion),
       isSale: hasDiscount,
       description: product.descripcion || undefined,
@@ -98,7 +142,13 @@ export function useMobileProductDetail(productId: number) {
   const handleAddToCart = () => {
     const shopProd = toShopProduct();
     if (!shopProd || !selectedVariant) return;
-    addToCart(shopProd, quantity, selectedVariant.talla.codigo, selectedVariant.color.nombre);
+    addToCart(
+      shopProd,
+      quantity,
+      selectedVariant.talla.codigo,
+      selectedVariant.color.nombre,
+      selectedVariant.id_producto_variante
+    );
   };
 
   const isFavorited = product ? isInWishlist(product.id_producto) : false;
@@ -111,12 +161,13 @@ export function useMobileProductDetail(productId: number) {
 
   return {
     product,
+    galleryImages,
     loading,
     errorMessage,
     selectedColorId,
-    setSelectedColorId,
+    setSelectedColorId: handleSelectColor,
     selectedTallaId,
-    setSelectedTallaId,
+    setSelectedTallaId: handleSelectTalla,
     selectedVariant,
     quantity,
     setQuantity,

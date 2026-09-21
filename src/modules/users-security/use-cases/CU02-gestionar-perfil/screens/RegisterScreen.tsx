@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, SafeAreaView, ActivityIndicator, Alert, ScrollView } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, SafeAreaView, ActivityIndicator, ScrollView } from 'react-native';
 import api from '../../../../../services/api';
+import { useAlert } from '../../../../../shared/context/AlertContext';
 
 export default function RegisterScreen({ navigation }: any) {
+  const { showAlert } = useAlert();
   const [formData, setFormData] = useState({
     nombre: '',
     apellido: '',
@@ -20,7 +22,7 @@ export default function RegisterScreen({ navigation }: any) {
 
   const handleRegister = async () => {
     if (!formData.nombre || !formData.apellido || !formData.email || !formData.password) {
-      setErrorMsg('Todos los campos son obligatorios.');
+      setErrorMsg('Por favor completa todos los campos.');
       return;
     }
 
@@ -45,9 +47,13 @@ export default function RegisterScreen({ navigation }: any) {
         password: formData.password,
       });
 
-      Alert.alert('Éxito', 'Cuenta creada exitosamente. Por favor inicia sesión.', [
-        { text: 'OK', onPress: () => navigation.navigate('Login') }
-      ]);
+      showAlert({
+        title: '¡Cuenta Creada!',
+        message: 'Tu cuenta ha sido creada exitosamente. Ya puedes iniciar sesión en Dressly.',
+        type: 'success',
+        primaryButtonText: 'Iniciar Sesión',
+        onPrimaryPress: () => navigation.navigate('Login'),
+      });
     } catch (err: any) {
       if (err.response) {
         setErrorMsg(err.response.data.message || 'Error al crear la cuenta.');

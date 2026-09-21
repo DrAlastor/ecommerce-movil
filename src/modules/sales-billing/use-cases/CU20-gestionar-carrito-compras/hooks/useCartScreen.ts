@@ -1,27 +1,47 @@
-import { Alert } from 'react-native';
 import { useShop } from '../../../../../shared/context/ShopContext';
+import { useAlert } from '../../../../../shared/context/AlertContext';
+import { useAuth } from '../../../../users-security/shared/AuthContext';
 
 export function useCartScreen(navigation: any) {
   const { cart, removeFromCart, updateQuantity, clearCart, cartTotal, cartItemCount } = useShop();
+  const { showAlert, showConfirm } = useAlert();
+  const { isAuthenticated } = useAuth();
 
   const formatPrice = (price: number) => `${price.toFixed(2)} Bs`;
 
   const handleConfirmClear = () => {
-    Alert.alert(
-      'Vaciar Carrito',
-      '¿Estás seguro de que deseas eliminar todas las prendas de tu bolsa?',
-      [
-        { text: 'Cancelar', style: 'cancel' },
-        { text: 'Vaciar', style: 'destructive', onPress: clearCart },
-      ]
-    );
+    showConfirm({
+      title: 'Vaciar Bolsa',
+      message: '¿Estás seguro de que deseas eliminar todas las prendas de tu bolsa de compras?',
+      type: 'warning',
+      primaryButtonText: 'Vaciar Bolsa',
+      secondaryButtonText: 'Cancelar',
+      onConfirm: clearCart,
+    });
   };
 
   const handleProceedToCheckout = () => {
     if (cart.length === 0) {
-      Alert.alert('Bolsa Vacía', 'Agrega prendas a tu carrito antes de proceder al pago.');
+      showAlert({
+        title: 'Bolsa Vacía',
+        message: 'Agrega prendas a tu carrito antes de proceder a la pasarela de pago.',
+        type: 'warning',
+      });
       return;
     }
+
+    if (!isAuthenticated) {
+      showConfirm({
+        title: 'Iniciar Sesión Requerido',
+        message: 'Para procesar tu pago de forma segura y asociar tu pedido a tu cuenta, por favor inicia sesión o crea tu cuenta en Dressly.',
+        type: 'warning',
+        primaryButtonText: 'Iniciar Sesión',
+        secondaryButtonText: 'Continuar mirando',
+        onConfirm: () => navigation.navigate('Login'),
+      });
+      return;
+    }
+
     navigation.navigate('Checkout');
   };
 

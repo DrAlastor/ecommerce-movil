@@ -48,7 +48,9 @@ export function PurchaseReceiptModal({
             <View style={styles.metaSection}>
               <View style={styles.metaRow}>
                 <Text style={styles.metaLabel}>Nº Factura:</Text>
-                <Text style={styles.metaValue}>{receipt.factura?.numero_factura || `#${receipt.id_venta}`}</Text>
+                <Text style={styles.metaValue}>
+                  {receipt.factura?.numero_factura || receipt.codigo_factura || `#${receipt.id_venta}`}
+                </Text>
               </View>
               {receipt.factura?.numero_autorizacion && (
                 <View style={styles.metaRow}>
@@ -58,16 +60,24 @@ export function PurchaseReceiptModal({
               )}
               <View style={styles.metaRow}>
                 <Text style={styles.metaLabel}>Fecha y Hora:</Text>
-                <Text style={styles.metaValue}>{new Date(receipt.fecha).toLocaleString()}</Text>
+                <Text style={styles.metaValue}>
+                  {receipt.fecha && !isNaN(new Date(receipt.fecha).getTime())
+                    ? new Date(receipt.fecha).toLocaleString()
+                    : 'Reciente'}
+                </Text>
               </View>
               <View style={styles.metaRow}>
                 <Text style={styles.metaLabel}>Método de Pago:</Text>
-                <Text style={styles.metaValue}>{(receipt.pago?.metodo || 'TARJETA').toUpperCase()}</Text>
+                <Text style={styles.metaValue}>
+                  {(receipt.pago?.metodo || receipt.pago?.metodo_pago || 'TARJETA').toUpperCase()}
+                </Text>
               </View>
-              {receipt.pago?.transaccion_id && (
+              {(receipt.pago?.transaccion_id || receipt.pago?.transaccion_externa) && (
                 <View style={styles.metaRow}>
                   <Text style={styles.metaLabel}>ID Transacción:</Text>
-                  <Text style={styles.metaValue} numberOfLines={1}>{receipt.pago.transaccion_id}</Text>
+                  <Text style={styles.metaValue} numberOfLines={1}>
+                    {receipt.pago?.transaccion_id || receipt.pago?.transaccion_externa}
+                  </Text>
                 </View>
               )}
             </View>

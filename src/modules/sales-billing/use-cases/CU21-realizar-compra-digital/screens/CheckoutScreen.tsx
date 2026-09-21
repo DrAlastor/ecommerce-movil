@@ -9,17 +9,26 @@ import {
   StatusBar,
 } from 'react-native';
 import { useCheckout } from '../hooks/useCheckout';
+import { DeliveryMethodTabs } from '../components/DeliveryMethodTabs';
 import { DeliveryAddressForm } from '../components/DeliveryAddressForm';
+import { BranchPickupSelector } from '../components/BranchPickupSelector';
 import { OrderSummaryList } from '../components/OrderSummaryList';
 import { CheckoutTotalsCard } from '../components/CheckoutTotalsCard';
 import { CheckoutFooter } from '../components/CheckoutFooter';
 import { MobilePaymentModal } from '../../CU23-procesar-pago-electronico';
+import { ElegantAlertModal } from '../../../../../shared/components/ElegantAlertModal';
 
 export default function CheckoutScreen({ navigation }: any) {
   const {
     cart,
     cartTotal,
     formatPrice,
+    deliveryType,
+    setDeliveryType,
+    branches,
+    selectedBranchId,
+    setSelectedBranchId,
+    isLoadingBranches,
     address,
     setAddress,
     city,
@@ -31,6 +40,8 @@ export default function CheckoutScreen({ navigation }: any) {
     notes,
     setNotes,
     isPaymentModalVisible,
+    alertConfig,
+    closeAlert,
     handleOpenPayment,
     handleClosePayment,
     handleProcessPayment,
@@ -60,24 +71,45 @@ export default function CheckoutScreen({ navigation }: any) {
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
       >
-        {/* 1. Dirección de entrega */}
-        <DeliveryAddressForm
-          recipient={recipient}
-          setRecipient={setRecipient}
-          phone={phone}
-          setPhone={setPhone}
-          city={city}
-          setCity={setCity}
-          address={address}
-          setAddress={setAddress}
-          notes={notes}
-          setNotes={setNotes}
+        {/* Selector de Método: Domicilio vs Sucursal */}
+        <DeliveryMethodTabs
+          selectedType={deliveryType}
+          onSelectType={setDeliveryType}
         />
 
-        {/* 2. Resumen de prendas */}
+        {/* Formulario según el método seleccionado */}
+        {deliveryType === 'domicilio' ? (
+          <DeliveryAddressForm
+            recipient={recipient}
+            setRecipient={setRecipient}
+            phone={phone}
+            setPhone={setPhone}
+            city={city}
+            setCity={setCity}
+            address={address}
+            setAddress={setAddress}
+            notes={notes}
+            setNotes={setNotes}
+          />
+        ) : (
+          <BranchPickupSelector
+            branches={branches}
+            selectedBranchId={selectedBranchId}
+            onSelectBranch={setSelectedBranchId}
+            recipient={recipient}
+            setRecipient={setRecipient}
+            phone={phone}
+            setPhone={setPhone}
+            pickupNotes={notes}
+            setPickupNotes={setNotes}
+            isLoading={isLoadingBranches}
+          />
+        )}
+
+        {/* Resumen de prendas */}
         <OrderSummaryList cart={cart} formatPrice={formatPrice} />
 
-        {/* 3. Desglose económico */}
+        {/* Desglose económico */}
         <CheckoutTotalsCard cartTotal={cartTotal} formatPrice={formatPrice} />
       </ScrollView>
 
@@ -100,6 +132,26 @@ export default function CheckoutScreen({ navigation }: any) {
           handleClosePayment();
           navigation.replace('MyPurchases');
         }}
+        onNavigateLogin={() => {
+          handleClosePayment();
+          navigation.navigate('Login');
+        }}
+      />
+
+      <ElegantAlertModal
+        visible={alertConfig.visible}
+        type={alertConfig.type}
+        title={alertConfig.title}
+        message={alertConfig.message}
+        primaryButtonText={alertConfig.primaryText || 'Entendido'}
+        onPrimaryPress={() => {
+          if (alertConfig.onPrimaryPress) {
+            alertConfig.onPrimaryPress();
+          } else {
+            closeAlert();
+          }
+        }}
+        onClose={closeAlert}
       />
     </SafeAreaView>
   );

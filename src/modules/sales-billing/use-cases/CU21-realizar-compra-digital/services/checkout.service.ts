@@ -7,6 +7,9 @@ export const CheckoutService = {
       const response = await api.post('/sales-billing/checkout/process', input);
       return response.data;
     } catch (error: any) {
+      if (error.response?.status === 401) {
+        throw new Error('Sesión Expirada. Por favor inicia sesión nuevamente para completar tu compra de forma segura.');
+      }
       const message =
         error.response?.data?.message ||
         error.message ||

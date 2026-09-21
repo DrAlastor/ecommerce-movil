@@ -18,6 +18,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
 import { AuthProvider, useAuth } from './src/modules/users-security/shared/AuthContext';
 import { ShopProvider } from './src/shared/context/ShopContext';
+import { AlertProvider } from './src/shared/context/AlertContext';
 import AdminNavigator from './src/shared/layouts/AdminNavigator';
 
 // Screens
@@ -37,8 +38,7 @@ import {
 import WishlistScreen from './src/modules/shop/use-cases/CU12-lista-deseos/screens/WishlistScreen';
 import BranchesScreen from './src/modules/branches-inventory/use-cases/CU14-consultar-sucursales/screens/BranchesScreen';
 import { MyReservationsScreen } from './src/modules/reservations';
-
-
+import { VirtualFittingScreen } from './src/modules/mobile-experience';
 
 // Tipos para las rutas
 type RootStackParamList = {
@@ -54,6 +54,7 @@ type RootStackParamList = {
   Recommendations: undefined;
   Branches: { selectMode?: boolean; onSelectBranch?: (branch: any) => void } | undefined;
   MyReservations: undefined;
+  VirtualFitting: { id_producto?: number; productId?: number; variantId?: number } | undefined;
   ForgotPassword: undefined;
   ResetPassword: { email?: string; token?: string } | undefined;
 };
@@ -120,6 +121,7 @@ function RootNavigator() {
       <RootStack.Screen name="Branches" component={BranchesScreen} />
       <RootStack.Screen name="Profile" component={ProfileScreen} />
       <RootStack.Screen name="MyReservations" component={MyReservationsScreen} />
+      <RootStack.Screen name="VirtualFitting" component={VirtualFittingScreen} />
       {!isAuthenticated && (
         <>
           <RootStack.Screen name="Login" component={LoginScreen} />
@@ -138,13 +140,15 @@ function App() {
   return (
     <SafeAreaProvider>
       <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} />
-      <AuthProvider>
-        <ShopProvider>
-          <NavigationContainer>
-            <RootNavigator />
-          </NavigationContainer>
-        </ShopProvider>
-      </AuthProvider>
+      <AlertProvider>
+        <AuthProvider>
+          <ShopProvider>
+            <NavigationContainer>
+              <RootNavigator />
+            </NavigationContainer>
+          </ShopProvider>
+        </AuthProvider>
+      </AlertProvider>
     </SafeAreaProvider>
   );
 }

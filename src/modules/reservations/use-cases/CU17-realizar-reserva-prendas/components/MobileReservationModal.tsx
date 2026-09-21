@@ -9,7 +9,6 @@ import {
   Image,
   ActivityIndicator,
   TextInput,
-  Alert,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import type {
@@ -17,6 +16,7 @@ import type {
   ReservationReceipt,
 } from '../types/reservation.types';
 import { mobileReservationService } from '../services/reservation.service';
+import { useAlert } from '../../../../../shared/context/AlertContext';
 
 interface MobileReservationModalProps {
   visible: boolean;
@@ -47,6 +47,7 @@ export const MobileReservationModal: React.FC<MobileReservationModalProps> = ({
   onReservationSuccess,
   onRequireLogin,
 }) => {
+  const { showAlert, showConfirm } = useAlert();
   const [loading, setLoading] = useState<boolean>(false);
   const [branches, setBranches] = useState<BranchAvailability[]>([]);
   const [selectedBranchId, setSelectedBranchId] = useState<number | null>(null);
@@ -77,7 +78,11 @@ export const MobileReservationModal: React.FC<MobileReservationModalProps> = ({
       }
     } catch (err) {
       console.error('Error fetching branches in mobile:', err);
-      Alert.alert('Error', 'No se pudieron consultar las sucursales disponibles.');
+      showAlert({
+        title: 'Error de Sucursales',
+        message: 'No se pudieron consultar las sucursales disponibles.',
+        type: 'error',
+      });
     } finally {
       setLoading(false);
     }
@@ -110,30 +115,35 @@ export const MobileReservationModal: React.FC<MobileReservationModalProps> = ({
   const handleConfirm = async () => {
     const token = await AsyncStorage.getItem('accessToken');
     if (!token) {
-      Alert.alert(
-        'Iniciar Sesión',
-        'Debes iniciar sesión con tu cuenta de cliente para reservar prendas.',
-        [
-          { text: 'Cancelar', style: 'cancel' },
-          {
-            text: 'Ir a Iniciar Sesión',
-            onPress: () => {
-              onClose();
-              if (onRequireLogin) onRequireLogin();
-            },
-          },
-        ],
-      );
+      showConfirm({
+        title: 'Iniciar Sesión',
+        message: 'Debes iniciar sesión con tu cuenta de cliente para reservar prendas en tienda.',
+        type: 'warning',
+        primaryButtonText: 'Ir a Iniciar Sesión',
+        secondaryButtonText: 'Cancelar',
+        onConfirm: () => {
+          onClose();
+          if (onRequireLogin) onRequireLogin();
+        },
+      });
       return;
     }
 
     if (!selectedBranchId) {
-      Alert.alert('Atención', 'Selecciona una sucursal.');
+      showAlert({
+        title: 'Seleccionar Sucursal',
+        message: 'Por favor selecciona una sucursal para tu retiro.',
+        type: 'warning',
+      });
       return;
     }
 
     if (!hasStock) {
-      Alert.alert('Sin existencias', 'Esta sucursal no tiene stock disponible.');
+      showAlert({
+        title: 'Sin Existencias',
+        message: 'Esta sucursal no cuenta con stock disponible en este momento.',
+        type: 'warning',
+      });
       return;
     }
 
@@ -153,7 +163,11 @@ export const MobileReservationModal: React.FC<MobileReservationModalProps> = ({
       const msg =
         err.response?.data?.message ||
         'No se pudo completar la reserva. Intenta nuevamente.';
-      Alert.alert('No se pudo reservar', msg);
+      showAlert({
+        title: 'Error en Reserva',
+        message: msg,
+        type: 'error',
+      });
     } finally {
       setSubmitting(false);
     }

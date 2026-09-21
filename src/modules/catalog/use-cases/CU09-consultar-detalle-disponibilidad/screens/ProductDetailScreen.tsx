@@ -7,7 +7,6 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   SafeAreaView,
-  Alert,
 } from 'react-native';
 import { useMobileProductDetail } from '../hooks/useMobileProductDetail';
 import { MobileProductGallery } from '../components/MobileProductGallery';
@@ -21,6 +20,7 @@ import {
   type ReservationReceipt,
 } from '../../../../reservations';
 import { useShop } from '../../../../../shared/context/ShopContext';
+import { useAlert } from '../../../../../shared/context/AlertContext';
 
 interface ProductDetailScreenProps {
   route?: { params?: { id_producto?: number } };
@@ -35,12 +35,14 @@ export const ProductDetailScreen: React.FC<ProductDetailScreenProps> = ({
 }) => {
   const effectiveId = propId || route?.params?.id_producto || 1;
   const { cartItemCount, wishlistCount } = useShop();
+  const { showAlert } = useAlert();
   const [reservationModalVisible, setReservationModalVisible] = useState<boolean>(false);
   const [receiptModalVisible, setReceiptModalVisible] = useState<boolean>(false);
   const [receiptData, setReceiptData] = useState<ReservationReceipt | null>(null);
 
   const {
     product,
+    galleryImages,
     loading,
     errorMessage,
     selectedColorId,
@@ -94,7 +96,15 @@ export const ProductDetailScreen: React.FC<ProductDetailScreenProps> = ({
 
   const handleAdd = () => {
     handleAddToCart();
-    Alert.alert('Bolsa de compras', `"${product.nombre}" añadido a la bolsa.`);
+    showAlert({
+      title: '¡Añadido a la Bolsa!',
+      message: `"${product.nombre}" se agregó correctamente a tu bolsa de compras.`,
+      type: 'success',
+      primaryButtonText: 'Ver Bolsa',
+      onPrimaryPress: () => {
+        navigation?.navigate('Cart');
+      },
+    });
   };
 
   return (
@@ -141,12 +151,16 @@ export const ProductDetailScreen: React.FC<ProductDetailScreenProps> = ({
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         {/* Galería */}
         <MobileProductGallery
-          images={product.imagenes}
+          images={galleryImages}
           activeImageIndex={activeImageIndex}
           onSelectImage={setActiveImageIndex}
           hasDiscount={hasDiscount}
           discountPercent={product.descuento_porcentaje}
-          has3DModel={Boolean(selectedVariant?.modelo_3d_url || product.tiene_modelo_3d)}
+          has3DModel={Boolean(
+            selectedVariant?.modelo_3d_url ||
+              product.tiene_modelo_3d ||
+              product.variantes.some((v) => Boolean(v.modelo_3d_url)),
+          )}
         />
 
         <View style={styles.bodyContent}>
@@ -191,9 +205,21 @@ export const ProductDetailScreen: React.FC<ProductDetailScreenProps> = ({
             onOpenSizeGuide={() => setSizeGuideVisible(true)}
           />
 
-          {/* Vestidor Virtual 3D */}
+          {/* Vestidor Virtual 3D (CU25) */}
           <VirtualFittingButton
-            model3dUrl={selectedVariant?.modelo_3d_url}
+            model3dUrl={
+              selectedVariant?.modelo_3d_url ||
+              product.variantes.find((v) => Boolean(v.modelo_3d_url))?.modelo_3d_url ||
+              (product.tiene_modelo_3d ? '3d-supported' : null)
+            }
+            productId={product.id_producto}
+            variantId={selectedVariant?.id_producto_variante}
+            onPress={() =>
+              navigation?.navigate('VirtualFitting', {
+                id_producto: product.id_producto,
+                variantId: selectedVariant?.id_producto_variante,
+              })
+            }
           />
 
           {/* Disponibilidad en Tiendas trigger */}

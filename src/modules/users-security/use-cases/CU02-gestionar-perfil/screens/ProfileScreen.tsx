@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, SafeAreaView, ActivityIndicator, Alert, ScrollView } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, SafeAreaView, ActivityIndicator, ScrollView } from 'react-native';
 import api from '../../../../../services/api';
 import { useAuth } from '../../../shared/AuthContext';
+import { useAlert } from '../../../../../shared/context/AlertContext';
 
 export default function ProfileScreen({ navigation }: any) {
   const { user, isAuthenticated, isLoading: authLoading, logout } = useAuth();
+  const { showAlert } = useAlert();
   
   const [formData, setFormData] = useState({
     nombre: '',
@@ -29,18 +31,19 @@ export default function ProfileScreen({ navigation }: any) {
   useEffect(() => {
     const fetchProfile = async () => {
       try {
-        const response = await api.get('/auth/profile');
+        const res = await api.get('/auth/profile');
         
-        const cliente = response.data.user.cliente;
-        const empleado = response.data.user.empleado;
+        const cliente = res.data.user.cliente;
+        const empleado = res.data.user.empleado;
         if (cliente) {
+          setIsEmpleado(false);
           setFormData({
             nombre: cliente.nombre || '',
             apellido: cliente.apellido || '',
             sexo: cliente.sexo || '',
             fecha_nacimiento: cliente.fecha_nacimiento ? cliente.fecha_nacimiento.split('T')[0] : '',
             preferencias_estilo: cliente.preferencias_estilo || '',
-            telefono: '',
+            telefono: cliente.telefono || '',
           });
         } else if (empleado) {
           setIsEmpleado(true);
@@ -54,7 +57,7 @@ export default function ProfileScreen({ navigation }: any) {
           });
         }
       } catch (err: any) {
-        Alert.alert('Error', 'No se pudo cargar el perfil');
+        showAlert({ title: 'Error', message: 'No se pudo cargar el perfil', type: 'error' });
         if (err.response?.status === 401) {
           logout();
         }
@@ -70,7 +73,7 @@ export default function ProfileScreen({ navigation }: any) {
     } else {
       navigation.replace('Login');
     }
-  }, [isAuthenticated, authLoading, navigation, logout]);
+  }, [isAuthenticated, authLoading, navigation, logout, showAlert]);
 
   const handleChange = (name: string, value: string) => {
     setFormData({ ...formData, [name]: value });
@@ -95,10 +98,18 @@ export default function ProfileScreen({ navigation }: any) {
       }
 
       await api.patch('/auth/profile', payload);
-      Alert.alert('Éxito', 'Perfil actualizado exitosamente');
+      showAlert({
+        title: 'Perfil Actualizado',
+        message: 'Tus datos de perfil han sido guardados exitosamente.',
+        type: 'success',
+      });
     } catch (err: any) {
       const msg = err.response?.data?.message || 'No se pudo actualizar el perfil';
-      Alert.alert('Error', Array.isArray(msg) ? msg.join(', ') : msg);
+      showAlert({
+        title: 'Error al Guardar',
+        message: Array.isArray(msg) ? msg.join(', ') : msg,
+        type: 'error',
+      });
     } finally {
       setIsSaving(false);
     }
@@ -106,11 +117,19 @@ export default function ProfileScreen({ navigation }: any) {
 
   const handlePasswordSave = async () => {
     if (passwordData.newPassword !== passwordData.confirmPassword) {
-      Alert.alert('Error', 'Las contraseñas nuevas no coinciden');
+      showAlert({
+        title: 'Contraseñas no coinciden',
+        message: 'La nueva contraseña y su confirmación deben coincidir.',
+        type: 'warning',
+      });
       return;
     }
     if (passwordData.newPassword.length < 6) {
-      Alert.alert('Error', 'La nueva contraseña debe tener al menos 6 caracteres');
+      showAlert({
+        title: 'Contraseña Corta',
+        message: 'La nueva contraseña debe tener al menos 6 caracteres.',
+        type: 'warning',
+      });
       return;
     }
 
@@ -120,10 +139,18 @@ export default function ProfileScreen({ navigation }: any) {
         currentPassword: passwordData.currentPassword,
         newPassword: passwordData.newPassword
       });
-      Alert.alert('Éxito', 'Contraseña actualizada exitosamente');
+      showAlert({
+        title: 'Contraseña Actualizada',
+        message: 'Tu contraseña de acceso ha sido actualizada con éxito.',
+        type: 'success',
+      });
       setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
     } catch (err: any) {
-      Alert.alert('Error', err.response?.data?.message || 'No se pudo cambiar la contraseña');
+      showAlert({
+        title: 'Error de Contraseña',
+        message: err.response?.data?.message || 'No se pudo cambiar la contraseña',
+        type: 'error',
+      });
     } finally {
       setIsChangingPassword(false);
     }

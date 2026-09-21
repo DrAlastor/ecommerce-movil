@@ -9,7 +9,6 @@ import {
   Image,
   ActivityIndicator,
   RefreshControl,
-  Alert,
 } from 'react-native';
 import { mobileMyReservationsService } from '../services/my-reservations.service';
 import type {
@@ -17,6 +16,7 @@ import type {
   ReservationReceipt,
 } from '../types/my-reservations.types';
 import { MobileReservationReceiptModal } from '../../CU17-realizar-reserva-prendas/components/MobileReservationReceiptModal';
+import { useAlert } from '../../../../../shared/context/AlertContext';
 
 interface MyReservationsScreenProps {
   navigation?: any;
@@ -25,6 +25,7 @@ interface MyReservationsScreenProps {
 export const MyReservationsScreen: React.FC<MyReservationsScreenProps> = ({
   navigation,
 }) => {
+  const { showAlert, showConfirm } = useAlert();
   const [activeTab, setActiveTab] = useState<'activas' | 'historicas'>('activas');
   const [reservations, setReservations] = useState<MyReservationListItem[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
@@ -39,16 +40,67 @@ export const MyReservationsScreen: React.FC<MyReservationsScreenProps> = ({
     try {
       setLoading(true);
       const data = await mobileMyReservationsService.getMyReservations(activeTab);
-      setReservations(data);
+      const now = Date.now();
+
+      // Detectar reservas activas cuyo plazo de 48 horas ya venció
+      const expiredPending = data.filter((r) => {
+        const limitMs = new Date(r.fecha_limite).getTime();
+        const isPastLimit = !isNaN(limitMs) && limitMs < now;
+        const isPending = r.estado.toLowerCase() === 'pendiente' || r.estado.toLowerCase() === 'confirmada';
+        return isPastLimit && isPending;
+      });
+
+      // Disparar cancelación atómica en el backend para liberar inventario
+      if (expiredPending.length > 0) {
+        expiredPending.forEach((exp) => {
+          mobileMyReservationsService
+            .cancelReservation(
+              exp.id_reserva,
+              'Cancelada automáticamente: Plazo de 48 horas vencido',
+            )
+            .catch(() => {});
+        });
+      }
+
+      // Normalizar estado de expiración
+      const normalized = data.map((r) => {
+        const limitMs = new Date(r.fecha_limite).getTime();
+        const isPastLimit = !isNaN(limitMs) && limitMs < now;
+        const isPending = r.estado.toLowerCase() === 'pendiente' || r.estado.toLowerCase() === 'confirmada';
+        if (isPastLimit && isPending) {
+          return {
+            ...r,
+            estado: 'Vencida',
+            es_cancelable: false,
+          };
+        }
+        return r;
+      });
+
+      if (activeTab === 'activas') {
+        // En la pestaña activas, NO mostrar las que ya superaron las 48 horas
+        setReservations(normalized.filter((r) => r.estado !== 'Vencida'));
+      } else {
+        // En histórico, mostrar todas incluyendo las vencidas
+        setReservations(normalized);
+      }
     } catch (err: any) {
       console.error('Error fetching my reservations in mobile:', err);
       if (err.response?.status === 401) {
-        Alert.alert('Sesión Expirada', 'Inicia sesión para ver tus reservas.', [
-          { text: 'Ir a Login', onPress: () => navigation?.navigate?.('Login') },
-        ]);
+        showAlert({
+          title: 'Sesión Expirada',
+          message: 'Inicia sesión para ver tus reservas.',
+          type: 'warning',
+          primaryButtonText: 'Ir a Login',
+          onPrimaryPress: () => navigation?.navigate?.('Login'),
+        });
         return;
       }
-      Alert.alert('Error', 'No se pudieron consultar tus reservas.');
+      showAlert({
+        title: 'Error de Conexión',
+        message: 'No se pudieron consultar tus reservas.',
+        type: 'error',
+      });
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -100,30 +152,34 @@ export const MyReservationsScreen: React.FC<MyReservationsScreenProps> = ({
   };
 
   const handleCancelReservation = (res: MyReservationListItem) => {
-    Alert.alert(
-      '¿Cancelar Reserva?',
-      `¿Deseas cancelar la reserva ${res.codigo} en ${res.sucursal.nombre}? Las prendas volverán a estar disponibles en tienda.`,
-      [
-        { text: 'No, mantener', style: 'cancel' },
-        {
-          text: 'Sí, cancelar',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              const resp = await mobileMyReservationsService.cancelReservation(
-                res.id_reserva,
-                'Cancelada por el cliente desde la app',
-              );
-              Alert.alert('Reserva Cancelada', resp.mensaje);
-              loadReservations();
-            } catch (err: any) {
-              const msg = err.response?.data?.message || 'No se pudo cancelar.';
-              Alert.alert('Error', msg);
-            }
-          },
-        },
-      ],
-    );
+    showConfirm({
+      title: '¿Cancelar Reserva?',
+      message: `¿Deseas cancelar la reserva ${res.codigo} en ${res.sucursal.nombre}? Las prendas volverán a estar disponibles en tienda.`,
+      type: 'warning',
+      primaryButtonText: 'Sí, cancelar',
+      secondaryButtonText: 'No, mantener',
+      onConfirm: async () => {
+        try {
+          const resp = await mobileMyReservationsService.cancelReservation(
+            res.id_reserva,
+            'Cancelada por el cliente desde la app',
+          );
+          showAlert({
+            title: 'Reserva Cancelada',
+            message: resp.mensaje,
+            type: 'success',
+          });
+          loadReservations();
+        } catch (err: any) {
+          const msg = err.response?.data?.message || 'No se pudo cancelar.';
+          showAlert({
+            title: 'Error al Cancelar',
+            message: msg,
+            type: 'error',
+          });
+        }
+      },
+    });
   };
 
   const getStatusColor = (estado: string) => {
@@ -133,6 +189,7 @@ export const MyReservationsScreen: React.FC<MyReservationsScreenProps> = ({
     if (e === 'preparada') return { bg: '#E0E7FF', text: '#3730A3', border: '#C7D2FE' };
     if (e === 'completada') return { bg: '#ECFDF5', text: '#065F46', border: '#A7F3D0' };
     if (e === 'cancelada') return { bg: '#FEF2F2', text: '#991B1B', border: '#FECACA' };
+    if (e === 'vencida' || e === 'expirada') return { bg: '#FEF2F2', text: '#B91C1C', border: '#FECACA' };
     return { bg: '#F1F5F9', text: '#475569', border: '#CBD5E1' };
   };
 
@@ -300,8 +357,14 @@ export const MyReservationsScreen: React.FC<MyReservationsScreenProps> = ({
                     ))}
                   </View>
 
-                  {/* Vigencia */}
-                  {(res.estado === 'Pendiente' || res.estado === 'Confirmada') && (
+                  {/* Vigencia o Aviso de Expiración */}
+                  {res.estado === 'Vencida' ? (
+                    <View style={styles.expiredValidityRow}>
+                      <Text style={styles.expiredValidityText}>
+                        ⌛ Venció el {formattedLimit} (Superó el plazo de 48 hrs). Prendas liberadas a tienda.
+                      </Text>
+                    </View>
+                  ) : (res.estado === 'Pendiente' || res.estado === 'Confirmada') && (
                     <View style={styles.validityRow}>
                       <Text style={styles.validityLabel}>⏳ Vigente hasta:</Text>
                       <Text style={styles.validityDate}>{formattedLimit}</Text>
@@ -586,6 +649,21 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: '#92400E',
     fontWeight: '800',
+  },
+  expiredValidityRow: {
+    backgroundColor: '#FEF2F2',
+    borderWidth: 1,
+    borderColor: '#FECACA',
+    padding: 8,
+    borderRadius: 8,
+    marginBottom: 12,
+  },
+  expiredValidityText: {
+    fontSize: 11,
+    color: '#991B1B',
+    fontWeight: '700',
+    textAlign: 'center',
+    lineHeight: 16,
   },
   cardBottomRow: {
     flexDirection: 'row',

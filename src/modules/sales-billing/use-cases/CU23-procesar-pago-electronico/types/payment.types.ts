@@ -18,4 +18,5 @@ export interface MobilePaymentModalProps {
   onSuccess?: (result: DigitalPurchaseResult) => void;
   onNavigateHome?: () => void;
   onNavigateOrders?: () => void;
+  onNavigateLogin?: () => void;
 }

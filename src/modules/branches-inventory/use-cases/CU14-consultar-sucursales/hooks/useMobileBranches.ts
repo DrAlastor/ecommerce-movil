@@ -1,7 +1,8 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import { Linking, Alert } from 'react-native';
+import { Linking } from 'react-native';
 import { MobileBranchesService } from '../services/branches.service';
 import type { MobileBranch, MobileCity } from '../types';
+import { ElegantAlert } from '../../../../../shared/context/AlertContext';
 
 /**
  * Calcula si la sucursal se encuentra abierta actualmente
@@ -26,12 +27,12 @@ export function isBranchOpenNow(openTime?: string | null, closeTime?: string | n
   if (currentMinutes >= startMinutes && currentMinutes < endMinutes) {
     return {
       isOpen: true,
-      message: `Abierto hoy hasta las ${closeTime}`,
+      message: `Abierto ahora hasta las ${closeTime.substring(0, 5)}`,
     };
   } else {
     return {
       isOpen: false,
-      message: `Cerrado ahora (Abre ${openTime})`,
+      message: `Cerrado · Abre a las ${openTime.substring(0, 5)}`,
     };
   }
 }
@@ -59,7 +60,7 @@ export function useMobileBranches() {
 
       setCities(citiesData);
       setBranches(branchesData);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error al cargar sucursales en móvil:', error);
       setErrorMessage('No pudimos conectar con el servidor para obtener las sucursales.');
     } finally {
@@ -72,18 +73,24 @@ export function useMobileBranches() {
     loadData();
   }, [loadData]);
 
-  // Filtrado reactivo optimizado
+  const onRefresh = useCallback(() => {
+    setIsRefreshing(true);
+    loadData(true);
+  }, [loadData]);
+
   const filteredBranches = useMemo(() => {
     return branches.filter((branch) => {
-      if (selectedCityId && branch.id_ciudad !== selectedCityId) {
+      // Filtro por ciudad
+      if (selectedCityId !== null && branch.id_ciudad !== selectedCityId) {
         return false;
       }
+      // Filtro por búsqueda de texto
       if (searchQuery.trim()) {
-        const query = searchQuery.toLowerCase().trim();
-        const matchName = branch.nombre.toLowerCase().includes(query);
-        const matchCity = branch.ciudad.nombre.toLowerCase().includes(query);
-        const matchAddress = branch.direccion.toLowerCase().includes(query);
-        return matchName || matchCity || matchAddress;
+        const q = searchQuery.toLowerCase();
+        const matchesName = branch.nombre.toLowerCase().includes(q);
+        const matchesAddress = branch.direccion.toLowerCase().includes(q);
+        const matchesCity = branch.ciudad.nombre.toLowerCase().includes(q);
+        return matchesName || matchesAddress || matchesCity;
       }
       return true;
     });
@@ -97,11 +104,11 @@ export function useMobileBranches() {
         if (supported) {
           Linking.openURL(url);
         } else {
-          Alert.alert('Teléfono', `Número de contacto: ${phone}`);
+          ElegantAlert.show('Teléfono de Contacto', `Comunícate directamente al: ${phone}`, 'info');
         }
       })
       .catch(() => {
-        Alert.alert('Teléfono', `Número de contacto: ${phone}`);
+        ElegantAlert.show('Teléfono de Contacto', `Comunícate directamente al: ${phone}`, 'info');
       });
   }, []);
 
@@ -109,7 +116,7 @@ export function useMobileBranches() {
     const query = encodeURIComponent(`${branch.nombre}, ${branch.direccion}, ${branch.ciudad.nombre}, Bolivia`);
     const url = `https://www.google.com/maps/search/?api=1&query=${query}`;
     Linking.openURL(url).catch(() => {
-      Alert.alert('Ubicación', branch.direccion);
+      ElegantAlert.show('Ubicación de Sucursal', branch.direccion, 'info');
     });
   }, []);
 

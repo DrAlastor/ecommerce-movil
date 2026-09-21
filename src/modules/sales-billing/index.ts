@@ -11,3 +11,4 @@ export * from './use-cases/CU23-procesar-pago-electronico';
 export { MobilePaymentModal } from './use-cases/CU23-procesar-pago-electronico/components/MobilePaymentModal';
 
 export * from './services/sales-billing.service';
+export * from './services/cart.service';

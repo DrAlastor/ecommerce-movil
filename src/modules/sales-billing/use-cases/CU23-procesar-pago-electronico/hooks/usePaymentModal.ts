@@ -7,7 +7,8 @@ export function usePaymentModal({
   onConfirmPayment,
   onSuccess,
   onClose,
-}: Pick<MobilePaymentModalProps, 'onConfirmPayment' | 'onSuccess' | 'onClose'>) {
+  onNavigateLogin,
+}: Pick<MobilePaymentModalProps, 'onConfirmPayment' | 'onSuccess' | 'onClose' | 'onNavigateLogin'>) {
   const [method, setMethod] = useState<PaymentMethod>('tarjeta');
   const [cardNumber, setCardNumber] = useState('');
   const [cardHolder, setCardHolder] = useState('');
@@ -55,8 +56,38 @@ export function usePaymentModal({
     setSuccessResult(null);
   };
 
+  const [alertConfig, setAlertConfig] = useState<{
+    visible: boolean;
+    type: 'success' | 'error' | 'warning' | 'info';
+    title: string;
+    message: string;
+    primaryText?: string;
+    onPrimaryPress?: () => void;
+  }>({
+    visible: false,
+    type: 'error',
+    title: '',
+    message: '',
+    primaryText: 'Entendido',
+  });
+
+  const showAlert = (
+    title: string,
+    message: string,
+    type: 'success' | 'error' | 'warning' | 'info' = 'error',
+    primaryText = 'Entendido',
+    onPrimaryPress?: () => void,
+  ) => {
+    setAlertConfig({ visible: true, type, title, message, primaryText, onPrimaryPress });
+  };
+
+  const closeAlert = () => {
+    setAlertConfig((prev) => ({ ...prev, visible: false }));
+  };
+
   const handleModalClose = () => {
     resetForm();
+    closeAlert();
     onClose();
   };
 
@@ -64,19 +95,19 @@ export function usePaymentModal({
     if (method === 'tarjeta') {
       const rawCard = cardNumber.replace(/\s/g, '');
       if (rawCard.length < 15) {
-        Alert.alert('Tarjeta Inválida', 'Ingresa los 16 dígitos de tu tarjeta de crédito o débito.');
+        showAlert('Tarjeta Inválida', 'Ingresa los 16 dígitos de tu tarjeta de crédito o débito.', 'warning');
         return;
       }
       if (!cardHolder.trim()) {
-        Alert.alert('Titular Requerido', 'Ingresa el nombre del titular tal como figura en el plástico.');
+        showAlert('Titular Requerido', 'Ingresa el nombre del titular tal como figura en el plástico.', 'warning');
         return;
       }
       if (expiry.length < 5) {
-        Alert.alert('Vencimiento Inválido', 'Ingresa la fecha de vencimiento en formato MM/AA.');
+        showAlert('Vencimiento Inválido', 'Ingresa la fecha de vencimiento en formato MM/AA.', 'warning');
         return;
       }
       if (cvc.length < 3) {
-        Alert.alert('CVC Inválido', 'Ingresa el código de seguridad de 3 o 4 dígitos de tu tarjeta.');
+        showAlert('CVC Inválido', 'Ingresa el código de seguridad de 3 o 4 dígitos de tu tarjeta.', 'warning');
         return;
       }
     }
@@ -96,10 +127,34 @@ export function usePaymentModal({
         onSuccess(result);
       }
     } catch (error: any) {
-      Alert.alert(
-        'Pago Rechazado',
-        error.message || 'No se pudo procesar la transacción. Por favor verifica tus datos bancarios.'
-      );
+      const errMsg = error?.message || '';
+      const isAuthError =
+        errMsg.toLowerCase().includes('unauthorized') ||
+        errMsg.toLowerCase().includes('sesión expirada') ||
+        errMsg.toLowerCase().includes('token') ||
+        error?.response?.status === 401;
+
+      if (isAuthError) {
+        showAlert(
+          'Sesión Expirada',
+          'Tu sesión ha expirado por motivos de seguridad. Inicia sesión nuevamente para procesar el pago sin perder tus prendas de la bolsa.',
+          'warning',
+          'Iniciar Sesión',
+          () => {
+            closeAlert();
+            handleModalClose();
+            if (onNavigateLogin) {
+              onNavigateLogin();
+            }
+          },
+        );
+      } else {
+        showAlert(
+          'Pago Rechazado',
+          errMsg || 'No se pudo procesar la transacción. Por favor verifica tus datos bancarios.',
+          'error',
+        );
+      }
     } finally {
       setIsProcessing(false);
     }
@@ -115,6 +170,8 @@ export function usePaymentModal({
     cvc,
     isProcessing,
     successResult,
+    alertConfig,
+    closeAlert,
     handleCardNumberChange,
     handleExpiryChange,
     handleCvcChange,

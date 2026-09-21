@@ -29,14 +29,19 @@ export const MobileSalesBillingService = {
    * CU22: Obtiene el historial de compras del cliente
    */
   async getMyPurchases(params?: PurchasesFilterParams): Promise<PurchaseHistoryItem[]> {
-    const res = await api.get<PurchaseHistoryItem[]>('/sales-billing/purchases', {
+    const res = await api.get<any>('/sales-billing/purchases', {
       params: {
         estado: params?.estado && params.estado !== 'todos' ? params.estado : undefined,
         limit: params?.limit || 50,
         offset: params?.offset || 0,
       },
     });
-    return res.data;
+    const rawList = Array.isArray(res.data)
+      ? res.data
+      : Array.isArray(res.data?.data)
+      ? res.data.data
+      : [];
+    return rawList;
   },
 
   /**

@@ -3,16 +3,18 @@ import { useAuth } from '../../modules/users-security/shared/AuthContext';
 import type { ReactNode } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { Product, CartItem } from '../../types/shop.types';
+import { CartService } from '../../modules/sales-billing/services/cart.service';
 
 interface ShopContextType {
   cart: CartItem[];
   wishlist: number[];
   wishlistProducts: Product[];
   wishlistCount: number;
-  addToCart: (product: Product, quantity?: number, size?: string, color?: string) => void;
-  removeFromCart: (productId: number) => void;
-  updateQuantity: (productId: number, quantity: number) => void;
+  addToCart: (product: Product, quantity?: number, size?: string, color?: string, variantId?: number) => void;
+  removeFromCart: (productId: number, variantId?: number) => void;
+  updateQuantity: (productId: number, quantity: number, variantId?: number) => void;
   clearCart: () => void;
+  syncCartWithBackend: () => Promise<void>;
   toggleWishlist: (productId: number, product?: Product) => void;
   isInWishlist: (productId: number) => boolean;
   cartTotal: number;
@@ -75,7 +77,7 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   }, [wishlist, wishlistProducts, wishlistKey, wishlistProductsKey, loadedKey]);
 
-  const addToCart = useCallback((product: Product, quantity = 1, size?: string, color?: string) => {
+  const addToCart = useCallback((product: Product, quantity = 1, size?: string, color?: string, variantId?: number) => {
     const selectedSize = size || (product.sizes && product.sizes.length > 0 ? product.sizes[0] : undefined);
     const selectedColor = color || (product.colors && product.colors.length > 0 ? product.colors[0] : undefined);
 
@@ -83,8 +85,7 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       const existingItem = prev.find(
         (item) =>
           item.product.id === product.id &&
-          item.selectedSize === selectedSize &&
-          item.selectedColor === selectedColor
+          (variantId ? item.variantId === variantId : item.selectedSize === selectedSize && item.selectedColor === selectedColor)
       );
 
       if (existingItem) {
@@ -95,29 +96,73 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         );
       }
 
-      return [...prev, { product, quantity, selectedSize, selectedColor }];
+      return [...prev, { product, quantity, selectedSize, selectedColor, variantId }];
     });
+
+    // Si el usuario está autenticado, sincronizamos con el backend en segundo plano
+    if (user) {
+      if (variantId) {
+        CartService.addToCart({ id_producto_variante: variantId, cantidad: quantity }).catch(() => {});
+      } else {
+        CartService.addToCart({ id_producto: product.id, cantidad: quantity }).catch(() => {});
+      }
+    }
+  }, [user]);
+
+  const removeFromCart = useCallback((productId: number, variantId?: number) => {
+    setCart((prev) =>
+      prev.filter((item) => {
+        if (variantId && item.variantId) {
+          return item.variantId !== variantId;
+        }
+        return item.product.id !== productId;
+      })
+    );
   }, []);
 
-  const removeFromCart = useCallback((productId: number) => {
-    setCart((prev) => prev.filter((item) => item.product.id !== productId));
-  }, []);
-
-  const updateQuantity = useCallback((productId: number, quantity: number) => {
+  const updateQuantity = useCallback((productId: number, quantity: number, variantId?: number) => {
     if (quantity < 1) {
-      removeFromCart(productId);
+      removeFromCart(productId, variantId);
       return;
     }
     setCart((prev) =>
-      prev.map((item) =>
-        item.product.id === productId ? { ...item, quantity } : item
-      )
+      prev.map((item) => {
+        const matches = variantId && item.variantId
+          ? item.variantId === variantId
+          : item.product.id === productId;
+        return matches ? { ...item, quantity } : item;
+      })
     );
   }, [removeFromCart]);
 
   const clearCart = useCallback(() => {
     setCart([]);
-  }, []);
+    if (user) {
+      CartService.clearCart().catch(() => {});
+    }
+  }, [user]);
+
+  const syncCartWithBackend = useCallback(async () => {
+    if (!user || cart.length === 0) return;
+    try {
+      await CartService.clearCart().catch(() => {});
+      for (const item of cart) {
+        if (item.variantId) {
+          await CartService.addToCart({
+            id_producto_variante: item.variantId,
+            cantidad: item.quantity,
+          }).catch(() => {});
+        } else {
+          await CartService.addToCart({
+            id_producto: item.product.id,
+            cantidad: item.quantity,
+          }).catch(() => {});
+        }
+      }
+    } catch (err) {
+      console.warn('Error syncing cart with backend:', err);
+    }
+  }, [user, cart]);
 
   const toggleWishlist = useCallback((productId: number, product?: Product) => {
     setWishlist((prev) => {
@@ -165,6 +210,7 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       removeFromCart,
       updateQuantity,
       clearCart,
+      syncCartWithBackend,
       toggleWishlist,
       isInWishlist,
       cartTotal,
@@ -179,6 +225,7 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       removeFromCart,
       updateQuantity,
       clearCart,
+      syncCartWithBackend,
       toggleWishlist,
       isInWishlist,
       cartTotal,
