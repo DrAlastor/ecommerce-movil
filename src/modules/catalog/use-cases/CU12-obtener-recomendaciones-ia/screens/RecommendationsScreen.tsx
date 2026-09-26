@@ -1,3 +1,10 @@
+/**
+ * @caso-de-uso CU12 — Obtener recomendaciones de prendas mediante IA
+ * @subsistema Experiencia Inteligente
+ * @capa Boundary — Aplicación móvil
+ * @responsabilidad Representa la pantalla principal de Aplicación móvil; compone la interfaz e inicia las acciones del caso de uso.
+ * @secuencia Cliente -> asistente de recomendaciones -> controlador de IA -> servicio de recomendaciones -> Catálogo/Preferencias/Proveedor de IA.
+ */
 import React from 'react';
 import {
   ActivityIndicator,

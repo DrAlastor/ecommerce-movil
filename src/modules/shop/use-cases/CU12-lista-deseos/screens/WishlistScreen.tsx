@@ -1,3 +1,11 @@
+/**
+ * @caso-de-uso Módulo heredado — Lista de deseos
+ * @subsistema Tienda móvil
+ * @capa Boundary — Aplicación móvil
+ * @responsabilidad Representa la pantalla principal de Aplicación móvil; compone la interfaz e inicia las acciones del caso de uso.
+ * @secuencia Cliente -> lista de deseos -> servicio local/remoto -> Producto favorito.
+ * Nota: módulo heredado; su numeración no corresponde al catálogo oficial de CU del informe.
+ */
 import React from 'react';
 import { View, Text, StyleSheet, FlatList, Image, TouchableOpacity, SafeAreaView } from 'react-native';
 import { useShop } from '../../../../../shared/context/ShopContext';

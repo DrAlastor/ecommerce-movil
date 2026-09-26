@@ -1,3 +1,10 @@
+/**
+ * @caso-de-uso CU08 — Consultar catálogo de productos
+ * @subsistema Catálogo y Proveedores
+ * @capa Boundary — Aplicación móvil
+ * @responsabilidad Implementa una parte reutilizable de la interfaz de Aplicación móvil y comunica eventos al controlador de presentación.
+ * @secuencia Cliente -> catálogo y filtros -> controlador de catálogo -> servicio de catálogo -> Producto/Categoría/Colección/Promoción.
+ */
 import React from 'react';
 import { View, Text, StyleSheet, Image, TouchableOpacity } from 'react-native';
 import { useShop } from '../../../../../shared/context/ShopContext';

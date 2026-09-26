@@ -1,3 +1,10 @@
+/**
+ * @caso-de-uso CU22 — Consultar historial de compras
+ * @subsistema Ventas, Pagos y Compras
+ * @capa Entity/DTO — Aplicación móvil
+ * @responsabilidad Define los contratos de datos intercambiados entre la interfaz, los servicios y el backend.
+ * @secuencia Cliente -> historial -> controlador de compras -> servicio de historial -> Venta/DetalleVenta/Pago.
+ */
 export interface PurchaseItemDetail {
   id_detalle_venta: number;
   id_producto: number;

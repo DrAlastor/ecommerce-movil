@@ -1,3 +1,10 @@
+/**
+ * @caso-de-uso CU21 — Realizar compra digital
+ * @subsistema Ventas, Pagos y Compras
+ * @capa Entity/DTO — Aplicación móvil
+ * @responsabilidad Define los contratos de datos intercambiados entre la interfaz, los servicios y el backend.
+ * @secuencia Cliente -> checkout -> controlador de compra -> servicios de compra y pago -> Venta/DetalleVenta/Pago/Inventario.
+ */
 export interface DeliveryAddress {
   direccion: string;
   ciudad: string;

@@ -1,3 +1,10 @@
+/**
+ * @caso-de-uso CU25 — Utilizar vestidor virtual
+ * @subsistema Experiencia Móvil
+ * @capa Boundary — Aplicación móvil
+ * @responsabilidad Representa la pantalla principal de Aplicación móvil; compone la interfaz e inicia las acciones del caso de uso.
+ * @secuencia Cliente -> vestidor virtual -> controlador de experiencia -> servicios de cámara y renderizado -> Producto/Variante/Recursos 3D.
+ */
 import React, { useState, useEffect, useMemo } from 'react';
 import {
   SafeAreaView,

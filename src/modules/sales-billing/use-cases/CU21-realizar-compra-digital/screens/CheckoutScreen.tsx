@@ -1,3 +1,10 @@
+/**
+ * @caso-de-uso CU21 — Realizar compra digital
+ * @subsistema Ventas, Pagos y Compras
+ * @capa Boundary — Aplicación móvil
+ * @responsabilidad Representa la pantalla principal de Aplicación móvil; compone la interfaz e inicia las acciones del caso de uso.
+ * @secuencia Cliente -> checkout -> controlador de compra -> servicios de compra y pago -> Venta/DetalleVenta/Pago/Inventario.
+ */
 import React from 'react';
 import {
   View,

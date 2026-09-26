@@ -1,3 +1,10 @@
+/**
+ * @caso-de-uso CU20 — Gestionar carrito de compras
+ * @subsistema Ventas, Pagos y Compras
+ * @capa Boundary — Aplicación móvil
+ * @responsabilidad Implementa una parte reutilizable de la interfaz de Aplicación móvil y comunica eventos al controlador de presentación.
+ * @secuencia Cliente -> carrito -> controlador de carrito -> servicio de carrito -> Carrito/DetalleCarrito/Variante/Inventario.
+ */
 import React from 'react';
 import { View, Text, StyleSheet, Image, TouchableOpacity } from 'react-native';
 import type { CartItem } from '../types/cart.types';

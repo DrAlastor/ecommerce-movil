@@ -1,3 +1,10 @@
+/**
+ * @caso-de-uso CU02 — Registrar y gestionar perfil de cliente
+ * @subsistema Usuarios y Seguridad
+ * @capa Boundary — Aplicación móvil
+ * @responsabilidad Representa la pantalla principal de Aplicación móvil; compone la interfaz e inicia las acciones del caso de uso.
+ * @secuencia Cliente -> formulario de perfil -> controlador de perfil -> servicio de clientes -> Usuario/Cliente/Rol.
+ */
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, SafeAreaView, ActivityIndicator, ScrollView } from 'react-native';
 import api from '../../../../../services/api';
@@ -21,17 +28,28 @@ export default function RegisterScreen({ navigation }: any) {
   };
 
   const handleRegister = async () => {
-    if (!formData.nombre || !formData.apellido || !formData.email || !formData.password) {
-      setErrorMsg('Por favor completa todos los campos.');
+    const cleanNombre = formData.nombre.trim();
+    const cleanApellido = formData.apellido.trim();
+    const cleanEmail = formData.email.trim().toLowerCase();
+    const cleanPassword = formData.password;
+
+    if (!cleanNombre || !cleanApellido || !cleanEmail || !cleanPassword) {
+      setErrorMsg('Por favor completa todos los campos obligatorios.');
       return;
     }
 
-    if (formData.password !== formData.confirmPassword) {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(cleanEmail)) {
+      setErrorMsg('Por favor ingresa un correo electrónico válido.');
+      return;
+    }
+
+    if (cleanPassword !== formData.confirmPassword) {
       setErrorMsg('Las contraseñas no coinciden.');
       return;
     }
 
-    if (formData.password.length < 6) {
+    if (cleanPassword.length < 6) {
       setErrorMsg('La contraseña debe tener al menos 6 caracteres.');
       return;
     }
@@ -41,10 +59,10 @@ export default function RegisterScreen({ navigation }: any) {
 
     try {
       await api.post('/auth/register', {
-        nombre: formData.nombre,
-        apellido: formData.apellido,
-        email: formData.email,
-        password: formData.password,
+        nombre: cleanNombre,
+        apellido: cleanApellido,
+        email: cleanEmail,
+        password: cleanPassword,
       });
 
       showAlert({
@@ -55,10 +73,13 @@ export default function RegisterScreen({ navigation }: any) {
         onPrimaryPress: () => navigation.navigate('Login'),
       });
     } catch (err: any) {
-      if (err.response) {
-        setErrorMsg(err.response.data.message || 'Error al crear la cuenta.');
+      if (err.response?.data?.message) {
+        const rawMsg = err.response.data.message;
+        setErrorMsg(Array.isArray(rawMsg) ? rawMsg.join(', ') : rawMsg);
+      } else if (err.response?.data?.error) {
+        setErrorMsg(err.response.data.error);
       } else {
-        setErrorMsg('Error de conexión con el servidor.');
+        setErrorMsg('Error de conexión con el servidor. Verifica tu conexión.');
       }
     } finally {
       setIsLoading(false);

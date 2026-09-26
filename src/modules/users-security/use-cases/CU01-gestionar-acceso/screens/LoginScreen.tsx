@@ -1,3 +1,10 @@
+/**
+ * @caso-de-uso CU01 — Gestionar acceso al sistema
+ * @subsistema Usuarios y Seguridad
+ * @capa Boundary — Aplicación móvil
+ * @responsabilidad Representa la pantalla principal de Aplicación móvil; compone la interfaz e inicia las acciones del caso de uso.
+ * @secuencia Usuario -> interfaz de acceso -> controlador de autenticación -> servicio de acceso -> Usuario/Rol/Sesión/Bitácora.
+ */
 import React, { useState, useCallback } from 'react';
 import {
   View,
@@ -264,7 +271,7 @@ export default function LoginScreen({ navigation }: any) {
         {/* Registro */}
         <View style={styles.registerContainer}>
           <Text style={styles.registerText}>¿No tienes una cuenta? </Text>
-          <TouchableOpacity>
+          <TouchableOpacity onPress={() => navigation.navigate('Register')}>
             <Text style={styles.registerLink}>Crear cuenta</Text>
           </TouchableOpacity>
         </View>

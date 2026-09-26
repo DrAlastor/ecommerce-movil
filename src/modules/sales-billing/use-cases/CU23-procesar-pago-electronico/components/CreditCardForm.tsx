@@ -1,3 +1,10 @@
+/**
+ * @caso-de-uso CU23 — Procesar pago electrónico
+ * @subsistema Ventas, Pagos y Compras
+ * @capa Boundary — Aplicación móvil
+ * @responsabilidad Implementa una parte reutilizable de la interfaz de Aplicación móvil y comunica eventos al controlador de presentación.
+ * @secuencia Cliente -> interfaz de pago -> controlador de pagos -> servicio de pago -> Pasarela de Pago/Pago/Venta.
+ */
 import React from 'react';
 import { View, Text, StyleSheet, TextInput, TouchableOpacity } from 'react-native';
 

@@ -1,3 +1,10 @@
+/**
+ * @caso-de-uso CU21 — Realizar compra digital
+ * @subsistema Ventas, Pagos y Compras
+ * @capa Control (presentación) — Aplicación móvil
+ * @responsabilidad Coordina estado, validaciones y acciones de la interfaz antes de delegar la operación al servicio o API.
+ * @secuencia Cliente -> checkout -> controlador de compra -> servicios de compra y pago -> Venta/DetalleVenta/Pago/Inventario.
+ */
 import { useState, useEffect, useCallback } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useShop } from '../../../../../shared/context/ShopContext';

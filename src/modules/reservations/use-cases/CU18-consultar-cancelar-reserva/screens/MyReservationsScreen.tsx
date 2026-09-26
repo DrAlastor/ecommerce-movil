@@ -1,3 +1,10 @@
+/**
+ * @caso-de-uso CU18 — Consultar y cancelar reserva
+ * @subsistema Reservas
+ * @capa Boundary — Aplicación móvil
+ * @responsabilidad Representa la pantalla principal de Aplicación móvil; compone la interfaz e inicia las acciones del caso de uso.
+ * @secuencia Cliente -> listado de reservas -> controlador de reservas -> servicio de cancelación -> Reserva/DetalleReserva/Inventario.
+ */
 import React, { useEffect, useState } from 'react';
 import {
   SafeAreaView,

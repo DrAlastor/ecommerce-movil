@@ -1,3 +1,10 @@
+/**
+ * @caso-de-uso CU12 — Obtener recomendaciones de prendas mediante IA
+ * @subsistema Experiencia Inteligente
+ * @capa Control (presentación) — Aplicación móvil
+ * @responsabilidad Coordina estado, validaciones y acciones de la interfaz antes de delegar la operación al servicio o API.
+ * @secuencia Cliente -> asistente de recomendaciones -> controlador de IA -> servicio de recomendaciones -> Catálogo/Preferencias/Proveedor de IA.
+ */
 import { useCallback, useEffect, useState } from 'react';
 import type { Product } from '../../../../../types/shop.types';
 import {
@@ -26,10 +33,17 @@ export function useMobileRecommendations() {
         prompt: customPrompt ?? prompt,
         limit: 8,
       });
-      setProducts(response.data);
-      setSource(response.meta.source);
+      setProducts(response.data || []);
+      setSource(response.meta?.source || 'local');
     } catch (error: any) {
-      setErrorMessage(error?.response?.data?.message || 'No se pudieron cargar recomendaciones.');
+      const msg = error?.response?.data?.message;
+      setErrorMessage(
+        msg
+          ? Array.isArray(msg)
+            ? msg.join(', ')
+            : msg
+          : 'No se pudieron cargar recomendaciones en este momento.',
+      );
     } finally {
       setLoading(false);
       setRefreshing(false);

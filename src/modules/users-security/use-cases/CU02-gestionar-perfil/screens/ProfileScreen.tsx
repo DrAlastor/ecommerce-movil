@@ -1,3 +1,10 @@
+/**
+ * @caso-de-uso CU02 — Registrar y gestionar perfil de cliente
+ * @subsistema Usuarios y Seguridad
+ * @capa Boundary — Aplicación móvil
+ * @responsabilidad Representa la pantalla principal de Aplicación móvil; compone la interfaz e inicia las acciones del caso de uso.
+ * @secuencia Cliente -> formulario de perfil -> controlador de perfil -> servicio de clientes -> Usuario/Cliente/Rol.
+ */
 import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, SafeAreaView, ActivityIndicator, ScrollView } from 'react-native';
 import api from '../../../../../services/api';

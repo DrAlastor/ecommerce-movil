@@ -1,3 +1,10 @@
+/**
+ * @caso-de-uso CU09 — Consultar detalle y disponibilidad de producto
+ * @subsistema Catálogo e Inventario
+ * @capa Boundary — Aplicación móvil
+ * @responsabilidad Representa la pantalla principal de Aplicación móvil; compone la interfaz e inicia las acciones del caso de uso.
+ * @secuencia Cliente -> detalle del producto -> controlador de detalle -> servicios de catálogo e inventario -> Producto/Variante/Inventario/Sucursal.
+ */
 import React, { useState } from 'react';
 import {
   View,

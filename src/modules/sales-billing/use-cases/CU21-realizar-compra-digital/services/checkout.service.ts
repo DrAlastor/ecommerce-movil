@@ -1,3 +1,10 @@
+/**
+ * @caso-de-uso CU21 — Realizar compra digital
+ * @subsistema Ventas, Pagos y Compras
+ * @capa Service/Gateway — Aplicación móvil
+ * @responsabilidad Encapsula la comunicación con la API o integración externa y transforma su respuesta para la capa de presentación.
+ * @secuencia Cliente -> checkout -> controlador de compra -> servicios de compra y pago -> Venta/DetalleVenta/Pago/Inventario.
+ */
 import api from '../../../../../services/api';
 import type { ProcessDigitalPurchaseInput, DigitalPurchaseResult } from '../types/checkout.types';
 

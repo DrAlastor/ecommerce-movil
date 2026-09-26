@@ -1,3 +1,10 @@
+/**
+ * @caso-de-uso CU22 — Consultar historial de compras
+ * @subsistema Ventas, Pagos y Compras
+ * @capa Service/Gateway — Aplicación móvil
+ * @responsabilidad Encapsula la comunicación con la API o integración externa y transforma su respuesta para la capa de presentación.
+ * @secuencia Cliente -> historial -> controlador de compras -> servicio de historial -> Venta/DetalleVenta/Pago.
+ */
 import api from '../../../../../services/api';
 import type { PurchaseHistoryItem } from '../types/purchases.types';
 

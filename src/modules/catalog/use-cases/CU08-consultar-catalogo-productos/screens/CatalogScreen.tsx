@@ -1,3 +1,10 @@
+/**
+ * @caso-de-uso CU08 — Consultar catálogo de productos
+ * @subsistema Catálogo y Proveedores
+ * @capa Boundary — Aplicación móvil
+ * @responsabilidad Representa la pantalla principal de Aplicación móvil; compone la interfaz e inicia las acciones del caso de uso.
+ * @secuencia Cliente -> catálogo y filtros -> controlador de catálogo -> servicio de catálogo -> Producto/Categoría/Colección/Promoción.
+ */
 import React from 'react';
 import {
   View,

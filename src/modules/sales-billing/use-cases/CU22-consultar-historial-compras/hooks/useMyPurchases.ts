@@ -1,3 +1,10 @@
+/**
+ * @caso-de-uso CU22 — Consultar historial de compras
+ * @subsistema Ventas, Pagos y Compras
+ * @capa Control (presentación) — Aplicación móvil
+ * @responsabilidad Coordina estado, validaciones y acciones de la interfaz antes de delegar la operación al servicio o API.
+ * @secuencia Cliente -> historial -> controlador de compras -> servicio de historial -> Venta/DetalleVenta/Pago.
+ */
 import { useState, useEffect, useCallback } from 'react';
 import { PurchasesService } from '../services/purchases.service';
 import type { PurchaseHistoryItem, PurchaseFilter } from '../types/purchases.types';

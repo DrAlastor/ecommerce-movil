@@ -1,3 +1,10 @@
+/**
+ * @caso-de-uso CU22 — Consultar historial de compras
+ * @subsistema Ventas, Pagos y Compras
+ * @capa Boundary — Aplicación móvil
+ * @responsabilidad Representa la pantalla principal de Aplicación móvil; compone la interfaz e inicia las acciones del caso de uso.
+ * @secuencia Cliente -> historial -> controlador de compras -> servicio de historial -> Venta/DetalleVenta/Pago.
+ */
 import React from 'react';
 import {
   View,

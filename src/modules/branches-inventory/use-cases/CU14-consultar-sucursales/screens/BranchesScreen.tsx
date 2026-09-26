@@ -1,3 +1,10 @@
+/**
+ * @caso-de-uso CU14 — Consultar sucursales
+ * @subsistema Sucursales e Inventario
+ * @capa Boundary — Aplicación móvil
+ * @responsabilidad Representa la pantalla principal de Aplicación móvil; compone la interfaz e inicia las acciones del caso de uso.
+ * @secuencia Cliente -> listado de sucursales -> controlador de consulta -> servicio de sucursales -> Ciudad/Sucursal/Disponibilidad.
+ */
 import React, { useCallback } from 'react';
 import {
   View,

@@ -1,3 +1,10 @@
+/**
+ * @caso-de-uso CU09 — Consultar detalle y disponibilidad de producto
+ * @subsistema Catálogo e Inventario
+ * @capa Control (presentación) — Aplicación móvil
+ * @responsabilidad Coordina estado, validaciones y acciones de la interfaz antes de delegar la operación al servicio o API.
+ * @secuencia Cliente -> detalle del producto -> controlador de detalle -> servicios de catálogo e inventario -> Producto/Variante/Inventario/Sucursal.
+ */
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   MobileProductDetailService,

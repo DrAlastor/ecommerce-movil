@@ -1,3 +1,10 @@
+/**
+ * @caso-de-uso CU20 — Gestionar carrito de compras
+ * @subsistema Ventas, Pagos y Compras
+ * @capa Control (presentación) — Aplicación móvil
+ * @responsabilidad Coordina estado, validaciones y acciones de la interfaz antes de delegar la operación al servicio o API.
+ * @secuencia Cliente -> carrito -> controlador de carrito -> servicio de carrito -> Carrito/DetalleCarrito/Variante/Inventario.
+ */
 import { useShop } from '../../../../../shared/context/ShopContext';
 import { useAlert } from '../../../../../shared/context/AlertContext';
 import { useAuth } from '../../../../users-security/shared/AuthContext';

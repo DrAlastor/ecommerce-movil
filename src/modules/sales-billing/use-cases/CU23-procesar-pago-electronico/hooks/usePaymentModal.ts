@@ -1,3 +1,10 @@
+/**
+ * @caso-de-uso CU23 — Procesar pago electrónico
+ * @subsistema Ventas, Pagos y Compras
+ * @capa Control (presentación) — Aplicación móvil
+ * @responsabilidad Coordina estado, validaciones y acciones de la interfaz antes de delegar la operación al servicio o API.
+ * @secuencia Cliente -> interfaz de pago -> controlador de pagos -> servicio de pago -> Pasarela de Pago/Pago/Venta.
+ */
 import { useState } from 'react';
 import { Alert } from 'react-native';
 import type { PaymentMethod, MobilePaymentModalProps } from '../types/payment.types';

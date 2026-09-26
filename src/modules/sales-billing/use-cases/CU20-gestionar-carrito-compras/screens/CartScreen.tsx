@@ -1,3 +1,10 @@
+/**
+ * @caso-de-uso CU20 — Gestionar carrito de compras
+ * @subsistema Ventas, Pagos y Compras
+ * @capa Boundary — Aplicación móvil
+ * @responsabilidad Representa la pantalla principal de Aplicación móvil; compone la interfaz e inicia las acciones del caso de uso.
+ * @secuencia Cliente -> carrito -> controlador de carrito -> servicio de carrito -> Carrito/DetalleCarrito/Variante/Inventario.
+ */
 import React from 'react';
 import {
   View,

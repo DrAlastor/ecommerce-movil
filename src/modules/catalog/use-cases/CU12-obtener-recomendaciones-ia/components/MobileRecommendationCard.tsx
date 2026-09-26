@@ -1,3 +1,10 @@
+/**
+ * @caso-de-uso CU12 — Obtener recomendaciones de prendas mediante IA
+ * @subsistema Experiencia Inteligente
+ * @capa Boundary — Aplicación móvil
+ * @responsabilidad Implementa una parte reutilizable de la interfaz de Aplicación móvil y comunica eventos al controlador de presentación.
+ * @secuencia Cliente -> asistente de recomendaciones -> controlador de IA -> servicio de recomendaciones -> Catálogo/Preferencias/Proveedor de IA.
+ */
 import React from 'react';
 import { Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import type { MobileRecommendedProduct } from '../services/recommendations.service';

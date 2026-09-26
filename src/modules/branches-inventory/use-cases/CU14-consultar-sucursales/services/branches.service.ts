@@ -1,3 +1,10 @@
+/**
+ * @caso-de-uso CU14 — Consultar sucursales
+ * @subsistema Sucursales e Inventario
+ * @capa Service/Gateway — Aplicación móvil
+ * @responsabilidad Encapsula la comunicación con la API o integración externa y transforma su respuesta para la capa de presentación.
+ * @secuencia Cliente -> listado de sucursales -> controlador de consulta -> servicio de sucursales -> Ciudad/Sucursal/Disponibilidad.
+ */
 import api from '../../../../../services/api';
 import type { MobileBranch, MobileCity, BranchQueryParams } from '../types';
 
