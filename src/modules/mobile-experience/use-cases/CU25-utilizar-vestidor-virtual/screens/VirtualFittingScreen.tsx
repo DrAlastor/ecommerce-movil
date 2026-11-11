@@ -32,6 +32,7 @@ import {
 import { useAuth } from '../../../../users-security/shared/AuthContext';
 import { useShop } from '../../../../../shared/context/ShopContext';
 import { ElegantAlertModal } from '../../../../../shared/components/ElegantAlertModal';
+import { offlineStatus, subscribeOffline } from '../../../../../services/offline/connectivity';
 
 const isNativeWebViewAvailable = () => {
   try {
@@ -104,6 +105,12 @@ export const VirtualFittingScreen: React.FC<VirtualFittingScreenProps> = ({
   const [engineMode, setEngineMode] = useState<'camera' | 'studio'>(
     WebViewComponent ? 'camera' : 'studio'
   );
+  const [offline, setOffline] = useState(offlineStatus().offline);
+  useEffect(() => subscribeOffline(() => {
+    const disconnected = offlineStatus().offline;
+    setOffline(disconnected);
+    if (disconnected) setEngineMode('studio');
+  }), []);
 
   const {
     arData,
@@ -280,6 +287,7 @@ export const VirtualFittingScreen: React.FC<VirtualFittingScreenProps> = ({
         <TouchableOpacity
           style={[styles.engineModeTab, engineMode === 'camera' && styles.engineModeTabActive]}
           onPress={() => setEngineMode('camera')}
+          disabled={offline}
           activeOpacity={0.85}
         >
           <Text
@@ -315,6 +323,7 @@ export const VirtualFittingScreen: React.FC<VirtualFittingScreenProps> = ({
             <>
               <WebViewComponent
                 source={{ uri: liveArUrl }}
+                onError={() => setEngineMode('studio')}
                 style={styles.webView}
                 javaScriptEnabled={true}
                 domStorageEnabled={true}

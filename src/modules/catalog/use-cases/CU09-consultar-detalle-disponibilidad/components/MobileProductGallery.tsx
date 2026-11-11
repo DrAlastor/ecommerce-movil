@@ -6,7 +6,8 @@
  * @secuencia Cliente -> detalle del producto -> controlador de detalle -> servicios de catálogo e inventario -> Producto/Variante/Inventario/Sucursal.
  */
 import React from 'react';
-import { View, Image, StyleSheet, Dimensions, TouchableOpacity, Text } from 'react-native';
+import { View, StyleSheet, Dimensions, TouchableOpacity, Text } from 'react-native';
+import { OfflineImage as Image } from '../../../../../services/offline/OfflineImage';
 
 const { width } = Dimensions.get('window');
 

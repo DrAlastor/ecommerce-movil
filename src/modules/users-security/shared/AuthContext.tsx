@@ -11,6 +11,8 @@ import { authService } from './services/auth.service';
 import type { AuthState, LoginRequest } from './types/auth.types';
 import { useTenant } from '../../../shared/context/TenantContext';
 import { notificationService } from '../../../services/notification.service';
+import { onSessionInvalid } from '../../../services/offline/sessionEvents';
+import { useOfflineRefresh } from '../../../services/offline/useOfflineRefresh';
 
 interface AuthContextType extends AuthState {
   login: (credentials: LoginRequest) => Promise<void>;
@@ -35,7 +37,19 @@ const initialState: AuthState = {
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [state, setState] = useState<AuthState>(initialState);
   const [isGuest, setIsGuest] = useState<boolean>(false);
-  const { selectTenant } = useTenant();
+  const { selectTenant, tenantKey } = useTenant();
+  const [sessionTenant, setSessionTenant] = useState<string | null>(null);
+  useEffect(() => onSessionInvalid(() => {
+    setState({ ...initialState, isLoading: false });
+    setIsGuest(false);
+  }), []);
+  useOfflineRefresh(async () => {
+    if (!state.isAuthenticated || sessionTenant !== tenantKey || (state.rol?.nombre || '').toUpperCase() === 'SUPER_ADMIN') return;
+    try {
+      const profile = await authService.getProfile();
+      setState(previous => previous.isAuthenticated && previous.user?.id_usuario === profile.user.id_usuario ? { ...previous, user: profile.user, rol: profile.rol, funciones: profile.funciones } : previous);
+    } catch { /* Un fallo de red conserva la sesión; la API notifica un rechazo de autenticación. */ }
+  });
 
   // Restaurar sesión al iniciar
   useEffect(() => {
@@ -50,6 +64,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
 
         if (hasToken && stored) {
+          setSessionTenant(storedTenant || tenantKey);
           setState({
             isAuthenticated: true,
             isLoading: false,
@@ -83,8 +98,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                   funciones: profile.funciones,
                 });
               }
-            } catch {
-              // Si el token expiró o falló la sincronización
+            } catch (error: any) {
+              if (error?.response?.status === 401) setState({ ...initialState, isLoading: false });
+              // Un fallo de red conserva la sesión local; un rechazo del servidor la invalida.
             }
           }
         } else {
@@ -114,6 +130,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       notificationService.syncDeviceTokenWithBackend((response as any).matchedTenant);
 
       setIsGuest(false);
+      setSessionTenant((response as any).matchedTenant || tenantKey);
       setState({
         isAuthenticated: true,
         isLoading: false,
@@ -125,11 +142,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setState(prev => ({ ...prev, isLoading: false }));
       throw error;
     }
-  }, [selectTenant]);
+  }, [selectTenant, tenantKey]);
 
   const logout = useCallback(async () => {
     await authService.logout();
     setIsGuest(false);
+    setSessionTenant(null);
     setState({
       ...initialState,
       isLoading: false,
@@ -142,17 +160,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const hasPermission = useCallback(
     (functionName: string) => {
-      return state.funciones.some((f) => f.nombre === functionName);
+      return sessionTenant === tenantKey && state.funciones.some((f) => f.nombre === functionName);
     },
-    [state.funciones],
+    [state.funciones, sessionTenant, tenantKey],
   );
 
   const getAccessLevel = useCallback(
     (functionName: string): string | null => {
-      const found = state.funciones.find((f) => f.nombre === functionName);
+      const found = sessionTenant === tenantKey ? state.funciones.find((f) => f.nombre === functionName) : undefined;
       return found ? found.nivel_acceso : null;
     },
-    [state.funciones],
+    [state.funciones, sessionTenant, tenantKey],
   );
 
   const isSuperAdmin = useMemo(() => {
@@ -165,7 +183,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const value = useMemo(
     () => ({
-      ...state,
+      ...(sessionTenant && sessionTenant !== tenantKey ? { ...initialState, isLoading: false } : state),
       login,
       logout,
       hasPermission,
@@ -174,7 +192,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       continueAsGuest,
       isSuperAdmin,
     }),
-    [state, login, logout, hasPermission, getAccessLevel, isGuest, continueAsGuest, isSuperAdmin],
+    [state, sessionTenant, tenantKey, login, logout, hasPermission, getAccessLevel, isGuest, continueAsGuest, isSuperAdmin],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

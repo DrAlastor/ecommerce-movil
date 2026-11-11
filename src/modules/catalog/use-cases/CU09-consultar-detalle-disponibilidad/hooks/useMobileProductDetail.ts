@@ -5,16 +5,20 @@
  * @responsabilidad Coordina estado, validaciones y acciones de la interfaz antes de delegar la operación al servicio o API.
  * @secuencia Cliente -> detalle del producto -> controlador de detalle -> servicios de catálogo e inventario -> Producto/Variante/Inventario/Sucursal.
  */
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import {
   MobileProductDetailService,
   type MobileProductDetail,
   type MobileProductVariant,
 } from '../services/product-detail.service';
 import { useShop } from '../../../../../shared/context/ShopContext';
+import { useOfflineRefresh } from '../../../../../services/offline/useOfflineRefresh';
+import { useTenant } from '../../../../../shared/context/TenantContext';
 import type { Product } from '../../../../../types/shop.types';
 
 export function useMobileProductDetail(productId: number) {
+  const { tenantKey } = useTenant();
+  const generation = useRef(0);
   const { addToCart, toggleWishlist, isInWishlist } = useShop();
 
   const [product, setProduct] = useState<MobileProductDetail | null>(null);
@@ -30,11 +34,13 @@ export function useMobileProductDetail(productId: number) {
 
   const fetchProduct = useCallback(async () => {
     if (!productId) return;
+    const request = ++generation.current;
     setLoading(true);
     setErrorMessage(null);
 
     try {
       const data = await MobileProductDetailService.getProductById(productId);
+      if (request !== generation.current) return;
       setProduct(data);
 
       if (data.variantes.length > 0) {
@@ -47,15 +53,19 @@ export function useMobileProductDetail(productId: number) {
       }
     } catch (err: any) {
       console.error('Error al cargar detalle de producto en móvil:', err);
+      if (request !== generation.current) return;
       setErrorMessage(err.response?.data?.message || 'No se pudo cargar el producto.');
     } finally {
-      setLoading(false);
+      if (request === generation.current) setLoading(false);
     }
-  }, [productId]);
+  }, [productId, tenantKey]);
 
   useEffect(() => {
-    fetchProduct();
+    setProduct(null);
+    void fetchProduct();
+    return () => { generation.current++; };
   }, [fetchProduct]);
+  useOfflineRefresh(fetchProduct);
 
   // Variante seleccionada
   const selectedVariant: MobileProductVariant | null = useMemo(() => {

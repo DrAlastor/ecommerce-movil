@@ -15,8 +15,8 @@ import {
   SafeAreaView,
   ActivityIndicator,
   RefreshControl,
-  Image,
 } from 'react-native';
+import { OfflineImage as Image } from '../../../../../services/offline/OfflineImage';
 import { useAuth } from '../../../../users-security/shared/AuthContext';
 import { useShop } from '../../../../../shared/context/ShopContext';
 import { useTenant } from '../../../../../shared/context/TenantContext';

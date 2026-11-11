@@ -5,17 +5,19 @@
  * @responsabilidad Coordina estado, validaciones y acciones de la interfaz antes de delegar la operación al servicio o API.
  * @secuencia Cliente -> catálogo y filtros -> controlador de catálogo -> servicio de catálogo -> Producto/Categoría/Colección/Promoción.
  */
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useTenant } from '../../../../../shared/context/TenantContext';
 import {
   MobileCatalogService,
   MobileCatalogProduct,
   MobileCatalogFilterMeta,
 } from '../../../services/catalog.service';
+import { useOfflineRefresh } from '../../../../../services/offline/useOfflineRefresh';
 import type { Product } from '../../../../../types/shop.types';
 
 export function useMobileCatalog() {
   const { tenantKey } = useTenant();
+  const requestVersion = useRef(0);
 
   // Estados de datos
   const [products, setProducts] = useState<MobileCatalogProduct[]>([]);
@@ -47,6 +49,8 @@ export function useMobileCatalog() {
 
   // Al cambiar de tienda/tenant, reiniciar filtros y búsqueda
   useEffect(() => {
+    setProducts([]);
+    setFilterMeta(null);
     setSelectedCategory('all');
     setSearchQuery('');
     setActiveFilters({});
@@ -55,6 +59,7 @@ export function useMobileCatalog() {
   // Cargar catálogo de productos
   const loadProducts = useCallback(
     async (isRefresh = false) => {
+      const request = ++requestVersion.current;
       if (isRefresh) {
         setRefreshing(true);
       } else {
@@ -100,16 +105,16 @@ export function useMobileCatalog() {
         }
 
         const res = await MobileCatalogService.getProducts(params);
-        setProducts(res.data);
+        if (request === requestVersion.current) setProducts(res.data);
       } catch (err: any) {
         console.error('Error al consultar catálogo en móvil:', err);
+        if (request !== requestVersion.current) return;
         setErrorMessage(
           err?.response?.data?.message ||
             'No se pudo conectar con el catálogo. Desliza para reintentar.'
         );
       } finally {
-        setLoading(false);
-        setRefreshing(false);
+        if (request === requestVersion.current) { setLoading(false); setRefreshing(false); }
       }
     },
     [searchQuery, selectedCategory, activeFilters, tenantKey]
@@ -118,6 +123,8 @@ export function useMobileCatalog() {
   useEffect(() => {
     loadProducts();
   }, [loadProducts]);
+
+  useOfflineRefresh(loadProducts);
 
   const handleApplyFilters = (filters: any) => {
     setActiveFilters(filters);

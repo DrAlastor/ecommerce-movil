@@ -6,7 +6,8 @@
  * @secuencia Cliente -> catálogo y filtros -> controlador de catálogo -> servicio de catálogo -> Producto/Categoría/Colección/Promoción.
  */
 import React from 'react';
-import { View, Text, StyleSheet, Image, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { OfflineImage as Image } from '../../../../../services/offline/OfflineImage';
 import { useShop } from '../../../../../shared/context/ShopContext';
 import type { MobileCatalogProduct } from '../../../services/catalog.service';
 import type { Product } from '../../../../../types/shop.types';

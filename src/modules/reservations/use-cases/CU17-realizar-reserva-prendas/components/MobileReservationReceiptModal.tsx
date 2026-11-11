@@ -13,8 +13,8 @@ import {
   StyleSheet,
   TouchableOpacity,
   ScrollView,
-  Image,
 } from 'react-native';
+import { OfflineImage as Image } from '../../../../../services/offline/OfflineImage';
 import type { ReservationReceipt } from '../types/reservation.types';
 
 interface MobileReservationReceiptModalProps {

@@ -14,6 +14,7 @@ import type { ProcessDigitalPurchaseInput, DigitalPurchaseResult } from '../type
 import { MobileBranchesService } from '../../../../branches-inventory/use-cases/CU14-consultar-sucursales/services/branches.service';
 import type { MobileBranch } from '../../../../branches-inventory/use-cases/CU14-consultar-sucursales/types';
 import type { DeliveryType } from '../components/DeliveryMethodTabs';
+import { requireNetwork } from '../../../../../services/offline/connectivity';
 
 export function useCheckout(navigation: any) {
   const { cart, cartTotal, clearCart, syncCartWithBackend } = useShop();
@@ -146,8 +147,16 @@ export function useCheckout(navigation: any) {
       }
     }
 
-    // Sincronizar en segundo plano mientras el usuario interactúa con la pasarela
-    syncCartWithBackend().catch(() => {});
+    try {
+      await requireNetwork();
+      if (await syncCartWithBackend()) {
+        showAlert('Precios actualizados', 'Revisa el nuevo total de tu carrito y vuelve a confirmar para continuar.', 'info');
+        return;
+      }
+    } catch (error) {
+      showAlert('Compra pendiente', error instanceof Error ? error.message : 'No se pudo verificar tu carrito. Tus prendas se conservan.', 'warning');
+      return;
+    }
     setIsPaymentModalVisible(true);
   };
 
@@ -162,7 +171,8 @@ export function useCheckout(navigation: any) {
     }
 
     // 1. Asegurar sincronización atómica con el backend antes del cobro final
-    await syncCartWithBackend();
+    await requireNetwork();
+    if (await syncCartWithBackend()) throw new Error('Los precios cambiaron. Cierra el pago y revisa el nuevo total antes de confirmar.');
 
     const isCard = paymentData.metodo_pago === 'tarjeta' || paymentData.metodo_pago === 'stripe';
     const payload: ProcessDigitalPurchaseInput = {

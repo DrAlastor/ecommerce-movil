@@ -7,11 +7,11 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   RefreshControl,
-  Image,
   SafeAreaView,
   StatusBar,
   Alert,
 } from 'react-native';
+import { OfflineImage as Image } from '../../services/offline/OfflineImage';
 import api from '../../services/api';
 import { useAuth } from '../../modules/users-security/shared/AuthContext';
 import { useTenant } from '../../shared/context/TenantContext';

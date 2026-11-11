@@ -7,7 +7,8 @@
  * Nota: módulo heredado; su numeración no corresponde al catálogo oficial de CU del informe.
  */
 import React from 'react';
-import { View, Text, StyleSheet, FlatList, Image, TouchableOpacity, SafeAreaView } from 'react-native';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, SafeAreaView } from 'react-native';
+import { OfflineImage as Image } from '../../../../../services/offline/OfflineImage';
 import { useShop } from '../../../../../shared/context/ShopContext';
 import { PRODUCTS } from '../../../../../data/mockProducts';
 

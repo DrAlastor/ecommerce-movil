@@ -13,10 +13,10 @@ import {
   StyleSheet,
   TouchableOpacity,
   ScrollView,
-  Image,
   ActivityIndicator,
   RefreshControl,
 } from 'react-native';
+import { OfflineImage as Image } from '../../../../../services/offline/OfflineImage';
 import { mobileMyReservationsService } from '../services/my-reservations.service';
 import type {
   MyReservationListItem,

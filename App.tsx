@@ -23,6 +23,7 @@ import { TenantProvider } from './src/shared/context/TenantContext';
 import AdminNavigator from './src/shared/layouts/AdminNavigator';
 import SaasSuperAdminScreen from './src/pages/admin/SaasSuperAdminScreen';
 import { notificationService } from './src/services/notification.service';
+import { OfflineBanner } from './src/services/offline/OfflineBanner';
 
 // Screens
 import LoginScreen from './src/modules/users-security/use-cases/CU01-gestionar-acceso/screens/LoginScreen';
@@ -166,6 +167,7 @@ function App() {
         <TenantProvider>
           <AuthProvider>
             <ShopProvider>
+              <OfflineBanner />
               <NavigationContainer>
                 <RootNavigator />
               </NavigationContainer>

@@ -6,7 +6,8 @@
  * @secuencia Cliente -> checkout -> controlador de compra -> servicios de compra y pago -> Venta/DetalleVenta/Pago/Inventario.
  */
 import React from 'react';
-import { View, Text, StyleSheet, Image } from 'react-native';
+import { View, Text, StyleSheet} from 'react-native';
+import { OfflineImage as Image } from '../../../../../services/offline/OfflineImage';
 
 interface OrderSummaryListProps {
   cart: any[];

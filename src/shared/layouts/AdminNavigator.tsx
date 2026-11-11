@@ -1,6 +1,7 @@
 import React from 'react';
 import { createDrawerNavigator, DrawerContentScrollView, DrawerItemList } from '@react-navigation/drawer';
-import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity} from 'react-native';
+import { OfflineImage as Image } from '../../services/offline/OfflineImage';
 import AdminDashboardScreen from '../../pages/admin/AdminDashboardScreen';
 import ProfileScreen from '../../modules/users-security/use-cases/CU02-gestionar-perfil/screens/ProfileScreen';
 import CatalogScreen from '../../modules/catalog/use-cases/CU08-consultar-catalogo-productos/screens/CatalogScreen';

@@ -1,9 +1,11 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import api from '../../../../services/api';
+import { requireNetwork } from '../../../../services/offline/connectivity';
 import type { LoginRequest, LoginResponse, AuthUser, RolInfo, FuncionInfo } from '../types/auth.types';
 
 export const authService = {
   async login(credentials: LoginRequest): Promise<LoginResponse & { matchedTenant?: string }> {
+    await requireNetwork();
     const emailNorm = (credentials.email || '').toLowerCase().trim();
     const isSuperAdminEmail =
       emailNorm.includes('superadmin') ||
@@ -115,6 +117,7 @@ export const authService = {
     await AsyncStorage.setItem(
       'authUser',
       JSON.stringify({
+        tenant: await AsyncStorage.getItem('current_tenant_id') || 'dressly',
         user: data.user,
         rol: data.rol,
         funciones: data.funciones,

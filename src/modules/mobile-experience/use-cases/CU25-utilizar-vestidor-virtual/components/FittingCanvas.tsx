@@ -10,10 +10,10 @@ import {
   View,
   Text,
   StyleSheet,
-  Image,
   TouchableOpacity,
   Dimensions,
 } from 'react-native';
+import { OfflineImage as Image } from '../../../../../services/offline/OfflineImage';
 import type {
   ArVariant,
   SilhouetteConfig,

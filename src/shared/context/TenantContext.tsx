@@ -79,7 +79,7 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     [currentTenant, tenantKey, availableTenants, selectTenant, isSelectorVisible, openSelector, closeSelector],
   );
 
-  return <TenantContext.Provider value={value}>{children}</TenantContext.Provider>;
+  return <TenantContext.Provider value={value}>{isLoaded ? children : null}</TenantContext.Provider>;
 };
 
 export function useTenant(): TenantContextType {

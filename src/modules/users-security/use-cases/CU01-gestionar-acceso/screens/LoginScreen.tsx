@@ -16,8 +16,8 @@ import {
   Platform,
   ScrollView,
   ActivityIndicator,
-  Image,
 } from 'react-native';
+import { OfflineImage as Image } from '../../../../../services/offline/OfflineImage';
 import { useAuth } from '../../../shared/AuthContext';
 import type { AxiosError } from 'axios';
 

@@ -13,10 +13,10 @@ import {
   StyleSheet,
   TouchableOpacity,
   ScrollView,
-  Image,
   ActivityIndicator,
   TextInput,
 } from 'react-native';
+import { OfflineImage as Image } from '../../../../../services/offline/OfflineImage';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import type {
   BranchAvailability,

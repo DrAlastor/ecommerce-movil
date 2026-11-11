@@ -6,7 +6,8 @@
  * @secuencia Cliente -> asistente de recomendaciones -> controlador de IA -> servicio de recomendaciones -> Catálogo/Preferencias/Proveedor de IA.
  */
 import React from 'react';
-import { Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { OfflineImage as Image } from '../../../../../services/offline/OfflineImage';
 import type { MobileRecommendedProduct } from '../services/recommendations.service';
 
 interface MobileRecommendationCardProps {

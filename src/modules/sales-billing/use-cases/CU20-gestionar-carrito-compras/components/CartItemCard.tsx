@@ -6,7 +6,8 @@
  * @secuencia Cliente -> carrito -> controlador de carrito -> servicio de carrito -> Carrito/DetalleCarrito/Variante/Inventario.
  */
 import React from 'react';
-import { View, Text, StyleSheet, Image, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { OfflineImage as Image } from '../../../../../services/offline/OfflineImage';
 import type { CartItem } from '../types/cart.types';
 
 interface CartItemCardProps {
