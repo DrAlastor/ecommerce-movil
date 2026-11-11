@@ -21,6 +21,8 @@ export function usePaymentModal({
   const [cardHolder, setCardHolder] = useState('');
   const [expiry, setExpiry] = useState('');
   const [cvc, setCvc] = useState('');
+  const [qrScannedCode, setQrScannedCode] = useState<string | null>(null);
+  const [transferReference, setTransferReference] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
   const [successResult, setSuccessResult] = useState<DigitalPurchaseResult | null>(null);
 
@@ -59,6 +61,8 @@ export function usePaymentModal({
     setCardHolder('');
     setExpiry('');
     setCvc('');
+    setQrScannedCode(null);
+    setTransferReference('');
     setIsProcessing(false);
     setSuccessResult(null);
   };
@@ -175,6 +179,10 @@ export function usePaymentModal({
     setCardHolder,
     expiry,
     cvc,
+    qrScannedCode,
+    setQrScannedCode,
+    transferReference,
+    setTransferReference,
     isProcessing,
     successResult,
     alertConfig,

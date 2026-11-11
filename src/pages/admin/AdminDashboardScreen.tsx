@@ -46,7 +46,7 @@ export default function AdminDashboardScreen({ navigation }: any) {
   // Filtrar funciones activas (acceso !== 'Ninguno')
   const allowedFunciones = funciones.filter(f => {
     const access = normalize(f.nivel_acceso || '');
-    return mobileUseCaseIds.has(f.id_funcion) && access !== 'ninguno' && access !== '';
+    return access !== 'ninguno' && access !== '';
   });
 
   // Agrupar funciones por módulo
@@ -60,7 +60,31 @@ export default function AdminDashboardScreen({ navigation }: any) {
     const norm = normalize(f.nombre);
     const modNorm = normalize(f.modulo);
 
-    // 1. Catálogo y prendas (CU08 / CU09)
+    // 1. Reservas de prendas en sucursal (CU22)
+    if (norm.includes('reserva') || modNorm.includes('reserva')) {
+      if (navigation?.navigate) {
+        navigation.navigate('ManageReservations');
+        return;
+      }
+    }
+
+    // 2. Punto de Venta (POS) y Facturación (CU27)
+    if (norm.includes('venta') || norm.includes('pos') || norm.includes('factur') || norm.includes('caja') || modNorm.includes('venta')) {
+      if (navigation?.navigate) {
+        navigation.navigate('POS');
+        return;
+      }
+    }
+
+    // 3. Reportes, Dashboard, QBE, Voz y Machine Learning (CU29)
+    if (norm.includes('reporte') || norm.includes('dashboard') || norm.includes('inteligencia') || norm.includes('ml') || norm.includes('qbe') || norm.includes('voz') || modNorm.includes('reporte')) {
+      if (navigation?.navigate) {
+        navigation.navigate('Reports');
+        return;
+      }
+    }
+
+    // 4. Catálogo y prendas (CU08 / CU09)
     if (norm.includes('catalogo') || norm.includes('producto') || norm.includes('categoria') || norm.includes('variante') || modNorm.includes('catalogo')) {
       if (navigation?.navigate) {
         navigation.navigate('Catalog');
@@ -68,7 +92,7 @@ export default function AdminDashboardScreen({ navigation }: any) {
       }
     }
 
-    // 2. IA y recomendaciones (CU12)
+    // 5. IA y recomendaciones (CU12)
     if (norm.includes('ia') || norm.includes('recomendacion') || norm.includes('vestidor') || modNorm.includes('ia') || modNorm.includes('realidad')) {
       if (navigation?.navigate) {
         navigation.navigate('Recommendations');
@@ -76,7 +100,7 @@ export default function AdminDashboardScreen({ navigation }: any) {
       }
     }
 
-    // 3. Perfil y contraseña (CU02 / CU03)
+    // 6. Perfil y contraseña (CU02 / CU03)
     if (norm.includes('perfil') || norm.includes('contrasena')) {
       if (navigation?.navigate) {
         navigation.navigate('Profile');
@@ -132,49 +156,49 @@ export default function AdminDashboardScreen({ navigation }: any) {
             <TouchableOpacity
               style={styles.quickCard}
               activeOpacity={0.78}
+              onPress={() => navigation?.navigate('POS')}
+            >
+              <View style={[styles.quickIconCircle, { backgroundColor: '#DCFCE7' }]}>
+                <Text style={{ fontSize: 22 }}>💳</Text>
+              </View>
+              <Text style={styles.quickCardTitle}>Registrar Venta</Text>
+              <Text style={styles.quickCardSub}>Presencial (POS)</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.quickCard}
+              activeOpacity={0.78}
+              onPress={() => navigation?.navigate('ManageReservations')}
+            >
+              <View style={[styles.quickIconCircle, { backgroundColor: '#FEF3C7' }]}>
+                <Text style={{ fontSize: 22 }}>📅</Text>
+              </View>
+              <Text style={styles.quickCardTitle}>Reservas</Text>
+              <Text style={styles.quickCardSub}>Entregas</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.quickCard}
+              activeOpacity={0.78}
+              onPress={() => navigation?.navigate('Reports')}
+            >
+              <View style={[styles.quickIconCircle, { backgroundColor: '#E0F2FE' }]}>
+                <Text style={{ fontSize: 22 }}>📊</Text>
+              </View>
+              <Text style={styles.quickCardTitle}>Reportes</Text>
+              <Text style={styles.quickCardSub}>Dashboard / ML</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.quickCard}
+              activeOpacity={0.78}
               onPress={() => navigation?.navigate('Catalog')}
             >
               <View style={[styles.quickIconCircle, { backgroundColor: '#F4ECE1' }]}>
                 <Text style={{ fontSize: 22 }}>👗</Text>
               </View>
               <Text style={styles.quickCardTitle}>Catálogo</Text>
-              <Text style={styles.quickCardSub}>CU08 / CU09</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={styles.quickCard}
-              activeOpacity={0.78}
-              onPress={() => navigation?.navigate('Recommendations')}
-            >
-              <View style={[styles.quickIconCircle, { backgroundColor: '#EDE9FE' }]}>
-                <Text style={{ fontSize: 22 }}>✨</Text>
-              </View>
-              <Text style={styles.quickCardTitle}>Estilos IA</Text>
-              <Text style={styles.quickCardSub}>CU12</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={styles.quickCard}
-              activeOpacity={0.78}
-              onPress={() => navigation?.navigate('Profile')}
-            >
-              <View style={[styles.quickIconCircle, { backgroundColor: '#E0F2FE' }]}>
-                <Text style={{ fontSize: 22 }}>👤</Text>
-              </View>
-              <Text style={styles.quickCardTitle}>Mi Perfil</Text>
-              <Text style={styles.quickCardSub}>CU02 / CU03</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={styles.quickCard}
-              activeOpacity={0.78}
-              onPress={() => navigation?.navigate('Cart')}
-            >
-              <View style={[styles.quickIconCircle, { backgroundColor: '#DCFCE7' }]}>
-                <Text style={{ fontSize: 22 }}>🛒</Text>
-              </View>
-              <Text style={styles.quickCardTitle}>Mi Bolsa</Text>
-              <Text style={styles.quickCardSub}>Compras</Text>
+              <Text style={styles.quickCardSub}>Prendas</Text>
             </TouchableOpacity>
           </View>
         </View>

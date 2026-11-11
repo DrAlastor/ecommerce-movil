@@ -62,10 +62,12 @@ api.interceptors.request.use(
 // Interceptor de response: maneja expiración de sesión
 api.interceptors.response.use(
   async (response) => {
-    if (!response.config.url?.endsWith('/login')) {
+    const isLoginUrl = response.config.url?.endsWith('/login') || response.config.url?.includes('/auth/login');
+    if (!isLoginUrl) {
       const currentToken = await AsyncStorage.getItem('accessToken');
-      const currentTenant = await AsyncStorage.getItem('current_tenant_id') || 'dressly';
-      if (currentToken !== response.config.offlineSession || currentTenant !== response.config.offlineTenant) throw new Error('La tienda o la sesión cambió durante la consulta. Vuelve a abrir esta pantalla.');
+      if (currentToken && response.config.offlineSession && currentToken !== response.config.offlineSession) {
+        throw new Error('La sesión cambió durante la consulta. Vuelve a abrir esta pantalla.');
+      }
     }
     if (response.config.offlineReadKey) {
       setOfflineStatus({ offline: false });
@@ -92,7 +94,9 @@ api.interceptors.response.use(
       }
       error.message = config?.offlineReadKey ? 'Sin conexión y sin datos guardados para esta consulta. Ábrela con internet antes de usarla offline.' : 'Sin conexión. La operación no fue confirmada; conserva tus datos y verifica su estado antes de reintentar.';
     }
-    if (error.response?.status === 401 && !config?.url?.endsWith('/login') && config?.offlineSession === await AsyncStorage.getItem('accessToken')) {
+    const isLoginEndpoint = config?.url?.endsWith('/login') || config?.url?.includes('/auth/login') || config?.url?.includes('/saas/auth/login');
+    const isNotificationEndpoint = config?.url?.includes('/notifications/');
+    if (error.response?.status === 401 && !isLoginEndpoint && !isNotificationEndpoint && config?.offlineSession && config?.offlineSession === await AsyncStorage.getItem('accessToken')) {
       await Promise.all(['accessToken', 'authUser'].map(key => AsyncStorage.removeItem(key)));
       sessionInvalid();
     }

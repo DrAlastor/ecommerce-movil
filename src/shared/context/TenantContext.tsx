@@ -63,7 +63,7 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   }, [tenantKey]);
 
   const availableTenants = useMemo(() => {
-    return Object.values(AVAILABLE_TENANTS);
+    return Object.values(AVAILABLE_TENANTS).filter(t => t.id !== 'saas');
   }, []);
 
   const value = useMemo(

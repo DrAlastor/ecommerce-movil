@@ -1,6 +1,6 @@
 import React from 'react';
 import { createDrawerNavigator, DrawerContentScrollView, DrawerItemList } from '@react-navigation/drawer';
-import { View, Text, StyleSheet, TouchableOpacity} from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { OfflineImage as Image } from '../../services/offline/OfflineImage';
 import AdminDashboardScreen from '../../pages/admin/AdminDashboardScreen';
 import ProfileScreen from '../../modules/users-security/use-cases/CU02-gestionar-perfil/screens/ProfileScreen';
@@ -11,13 +11,16 @@ import {
   CartScreen,
   CheckoutScreen,
   MyPurchasesScreen,
+  MobilePosScreen,
+  SalesHistoryScreen,
 } from '../../modules/sales-billing';
 import WishlistScreen from '../../modules/shop/use-cases/CU12-lista-deseos/screens/WishlistScreen';
 import BranchesScreen from '../../modules/branches-inventory/use-cases/CU14-consultar-sucursales/screens/BranchesScreen';
+import { ManageBranchReservationsScreen } from '../../modules/reservations';
+import { ReportsDashboardScreen } from '../../modules/reports-dashboard';
 import { VirtualFittingScreen } from '../../modules/mobile-experience';
 import { useAuth } from '../../modules/users-security/shared/AuthContext';
 import { useTenant } from '../context/TenantContext';
-
 
 const Drawer = createDrawerNavigator();
 
@@ -52,7 +55,7 @@ function CustomDrawerContent(props: any) {
             </Text>
           </View>
           <Text style={styles.userName}>{user?.empleado?.nombre} {user?.empleado?.apellido}</Text>
-          <Text style={styles.userRole}>{rol?.nombre}</Text>
+          <Text style={styles.userRole}>{rol?.nombre || 'Personal'}</Text>
         </View>
         <DrawerItemList {...props} />
       </DrawerContentScrollView>
@@ -66,9 +69,17 @@ function CustomDrawerContent(props: any) {
 }
 
 export default function AdminNavigator() {
+  const { rol, isSuperAdmin } = useAuth();
+  const rolName = (rol?.nombre || '').toLowerCase().trim();
+
+  const isAdmin = isSuperAdmin || rolName.includes('admin') || rolName.includes('super');
+  const isManager = isAdmin || rolName.includes('encargad') || rolName.includes('gerente');
+  const isCashier = isManager || rolName.includes('cajer') || rolName.includes('vent');
+
   return (
     <Drawer.Navigator
       drawerContent={CustomDrawerContent}
+      initialRouteName={isCashier && !isManager ? 'POS' : 'Dashboard'}
       screenOptions={{
         headerStyle: { backgroundColor: '#FFFFFF' },
         headerTintColor: '#1A1A1A',
@@ -76,101 +87,136 @@ export default function AdminNavigator() {
         drawerActiveBackgroundColor: '#1A1A1A',
         drawerActiveTintColor: '#FFFFFF',
         drawerInactiveTintColor: '#666666',
-        drawerLabelStyle: { fontSize: 15, fontWeight: '500' },
+        drawerLabelStyle: { fontSize: 14, fontWeight: '600' },
       }}
     >
-      <Drawer.Screen 
-        name="Dashboard" 
-        component={AdminDashboardScreen} 
-        options={{ title: '📊 Panel de Control' }} 
+      {/* 1. Panel de Control (Admin, Encargado y Cajero) */}
+      <Drawer.Screen
+        name="Dashboard"
+        component={AdminDashboardScreen}
+        options={{ title: '📊 Panel de Control' }}
       />
 
-      {/* CU08: Consultar catálogo de productos */}
-      <Drawer.Screen 
-        name="Catalog" 
-        component={CatalogScreen} 
-        options={{ title: '👗 Catálogo de Prendas', headerShown: false }} 
+      {/* 2. Registrar Venta Presencial (POS) (Cajero, Encargado, Admin) */}
+      {isCashier && (
+        <Drawer.Screen
+          name="POS"
+          component={MobilePosScreen}
+          options={{ title: '💳 Registrar Venta Presencial' }}
+        />
+      )}
+
+      {/* 3. Gestión de Reservas de Prendas (Cajero, Encargado, Admin) */}
+      {isCashier && (
+        <Drawer.Screen
+          name="ManageReservations"
+          component={ManageBranchReservationsScreen}
+          options={{ title: '📅 Gestión de Reservas' }}
+        />
+      )}
+
+      {/* 4. Módulo de Reportes e Inteligencia (Dashboard, Genéricos, QBE, Voz, ML) (Admin y Encargado) */}
+      {(isAdmin || isManager) && (
+        <Drawer.Screen
+          name="Reports"
+          component={ReportsDashboardScreen}
+          options={{ title: '📈 Reportes e Inteligencia' }}
+        />
+      )}
+
+      {/* 5. Catálogo de Prendas */}
+      <Drawer.Screen
+        name="Catalog"
+        component={CatalogScreen}
+        options={{ title: '👗 Catálogo de Prendas', headerShown: false }}
       />
 
-      {/* CU12: Obtener recomendaciones de prendas mediante IA */}
-      <Drawer.Screen 
-        name="Recommendations" 
-        component={RecommendationsScreen} 
-        options={{ title: '✨ Asistente IA / Estilos' }} 
+      {/* 6. Historial de Facturación y Ventas */}
+      {isCashier && (
+        <Drawer.Screen
+          name="SalesHistory"
+          component={SalesHistoryScreen}
+          options={{ title: '🛍️ Historial de Facturación' }}
+        />
+      )}
+
+      {/* 7. Asistente IA / Estilos */}
+      <Drawer.Screen
+        name="Recommendations"
+        component={RecommendationsScreen}
+        options={{ title: '✨ Asistente IA / Estilos' }}
       />
 
-      {/* CU02: Registrar y gestionar perfil de cliente */}
-      <Drawer.Screen 
-        name="Profile" 
-        component={ProfileScreen} 
-        options={{ title: '👤 Mi Perfil' }} 
+      {/* 8. Sucursales */}
+      <Drawer.Screen
+        name="Branches"
+        component={BranchesScreen}
+        options={{ title: '📍 Nuestras Sucursales', headerShown: false }}
       />
 
-      {/* CU14: Consultar sucursales */}
-      <Drawer.Screen 
-        name="Branches" 
-        component={BranchesScreen} 
-        options={{ title: '📍 Nuestras Sucursales', headerShown: false }} 
+      {/* 9. Mi Perfil */}
+      <Drawer.Screen
+        name="Profile"
+        component={ProfileScreen}
+        options={{ title: '👤 Mi Perfil' }}
       />
 
-
-      <Drawer.Screen 
-        name="Cart" 
-        component={CartScreen} 
-        options={{ title: '🛒 Bolsa de Compras' }} 
+      {/* Rutas internas navegables (ocultas en el Drawer) */}
+      <Drawer.Screen
+        name="Cart"
+        component={CartScreen}
+        options={{
+          drawerItemStyle: { display: 'none' },
+          title: '🛒 Bolsa de Compras',
+        }}
       />
-
-      <Drawer.Screen 
-        name="MyPurchases" 
-        component={MyPurchasesScreen} 
-        options={{ title: '🛍️ Mis Compras' }} 
+      <Drawer.Screen
+        name="MyPurchases"
+        component={MyPurchasesScreen}
+        options={{
+          drawerItemStyle: { display: 'none' },
+          title: '🛍️ Mis Compras',
+        }}
       />
-
-      <Drawer.Screen 
-        name="Checkout" 
-        component={CheckoutScreen} 
-        options={{ 
-          title: 'Finalizar Compra',
+      <Drawer.Screen
+        name="Checkout"
+        component={CheckoutScreen}
+        options={{
           drawerItemStyle: { display: 'none' },
           headerShown: false,
-        }} 
+        }}
       />
-
-      <Drawer.Screen 
-        name="Wishlist" 
-        component={WishlistScreen} 
-        options={{ title: '♥ Mis Favoritos' }} 
+      <Drawer.Screen
+        name="Wishlist"
+        component={WishlistScreen}
+        options={{
+          drawerItemStyle: { display: 'none' },
+          title: '♥ Mis Favoritos',
+        }}
       />
-
-      {/* CU09: Detalle de producto (navegable desde catálogo) */}
-      <Drawer.Screen 
-        name="ProductDetail" 
-        component={ProductDetailScreen} 
-        options={{ 
-          title: 'Detalle de Prenda',
+      <Drawer.Screen
+        name="ProductDetail"
+        component={ProductDetailScreen}
+        options={{
           drawerItemStyle: { display: 'none' },
           headerShown: false,
-        }} 
+        }}
       />
-
-      {/* CU25: Utilizar vestidor virtual */}
-      <Drawer.Screen 
-        name="VirtualFitting" 
-        component={VirtualFittingScreen} 
-        options={{ 
-          title: '👗 Vestidor Virtual 3D', 
-          headerShown: false,
-        }} 
-      />
-
-      {/* Alias para navegación interna */}
-      <Drawer.Screen 
-        name="Home" 
-        component={CatalogScreen} 
-        options={{ 
+      <Drawer.Screen
+        name="VirtualFitting"
+        component={VirtualFittingScreen}
+        options={{
           drawerItemStyle: { display: 'none' },
           headerShown: false,
-        }} 
+        }}
+      />
+      <Drawer.Screen
+        name="Home"
+        component={CatalogScreen}
+        options={{
+          drawerItemStyle: { display: 'none' },
+          headerShown: false,
+        }}
       />
     </Drawer.Navigator>
   );
@@ -203,7 +249,7 @@ const styles = StyleSheet.create({
   tenantDrawerName: {
     fontSize: 13,
     fontWeight: '700',
-    color: '#1A1A1A',
+    color: '#1C1510',
   },
   tenantDrawerSwitch: {
     fontSize: 11,
@@ -219,31 +265,32 @@ const styles = StyleSheet.create({
     borderBottomColor: '#EAEAEA',
   },
   avatar: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    backgroundColor: '#1A1A1A',
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: '#1C1510',
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: 10,
   },
   avatarText: {
     color: '#FFFFFF',
-    fontSize: 24,
+    fontSize: 22,
     fontWeight: 'bold',
   },
   userName: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: 'bold',
-    color: '#1A1A1A',
-    marginBottom: 4,
+    color: '#1C1510',
+    marginBottom: 3,
   },
   userRole: {
-    fontSize: 14,
-    color: '#6B6B6B',
+    fontSize: 13,
+    color: '#8C5E35',
+    fontWeight: '700',
   },
   footer: {
-    padding: 20,
+    padding: 16,
     borderTopWidth: 1,
     borderTopColor: '#EAEAEA',
     backgroundColor: '#FFFFFF',
@@ -251,10 +298,12 @@ const styles = StyleSheet.create({
   logoutButton: {
     paddingVertical: 12,
     alignItems: 'center',
+    backgroundColor: '#FEE2E2',
+    borderRadius: 10,
   },
   logoutText: {
     color: '#DC3545',
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: 'bold',
   },
 });

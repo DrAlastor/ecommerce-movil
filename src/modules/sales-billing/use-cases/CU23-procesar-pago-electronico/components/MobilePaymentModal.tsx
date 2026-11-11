@@ -13,6 +13,7 @@ import {
   Modal,
   TouchableOpacity,
   ScrollView,
+  TextInput,
 } from 'react-native';
 import type { MobilePaymentModalProps } from '../types/payment.types';
 import { usePaymentModal } from '../hooks/usePaymentModal';
@@ -34,6 +35,10 @@ export function MobilePaymentModal(props: MobilePaymentModalProps) {
     setCardHolder,
     expiry,
     cvc,
+    qrScannedCode,
+    setQrScannedCode,
+    transferReference,
+    setTransferReference,
     isProcessing,
     successResult,
     alertConfig,
@@ -58,7 +63,7 @@ export function MobilePaymentModal(props: MobilePaymentModalProps) {
           {/* Header */}
           <View style={styles.header}>
             <View>
-              <Text style={styles.headerTitle}>Pasarela de Pago</Text>
+              <Text style={styles.headerTitle}>Pasarela de Pago Oficial</Text>
               <Text style={styles.headerSubtitle}>
                 Total: <Text style={styles.totalHighlight}>{totalAmount.toFixed(2)} Bs</Text>
               </Text>
@@ -97,7 +102,7 @@ export function MobilePaymentModal(props: MobilePaymentModalProps) {
                 />
 
                 {/* Formulario según Método */}
-                {method === 'tarjeta' ? (
+                {method === 'tarjeta' && (
                   <CreditCardForm
                     cardNumber={cardNumber}
                     onCardNumberChange={handleCardNumberChange}
@@ -109,8 +114,38 @@ export function MobilePaymentModal(props: MobilePaymentModalProps) {
                     onCvcChange={handleCvcChange}
                     onAutofillTestCard={handleAutofillTestCard}
                   />
-                ) : (
-                  <QrPaymentView totalAmount={totalAmount} />
+                )}
+
+                {method === 'qr' && (
+                  <QrPaymentView
+                    totalAmount={totalAmount}
+                    onQrScanned={setQrScannedCode}
+                    isQrScanned={Boolean(qrScannedCode)}
+                  />
+                )}
+
+                {method === 'transferencia' && (
+                  <View style={styles.transferCard}>
+                    <Text style={styles.transferTitle}>Transferencia Bancaria Directa</Text>
+                    <Text style={styles.transferSub}>
+                      Realiza la transferencia desde la banca por internet a cualquiera de nuestras cuentas oficiales.
+                    </Text>
+
+                    <View style={styles.bankInfoBox}>
+                      <Text style={styles.bankLabel}>Banco de Crédito (BCP):</Text>
+                      <Text style={styles.bankValue}>Cta Cte: 201-5093821 (Bs)</Text>
+                      <Text style={styles.bankTitular}>FashionStore S.R.L. • NIT: 1029384756</Text>
+                    </View>
+
+                    <Text style={styles.refInputLabel}>Número de Comprobante / Referencia:</Text>
+                    <TextInput
+                      style={styles.refInput}
+                      placeholder="Ej: BCP-981240 o N° Operación"
+                      placeholderTextColor="#999"
+                      value={transferReference}
+                      onChangeText={setTransferReference}
+                    />
+                  </View>
                 )}
 
                 {/* Botón de Confirmación */}
@@ -122,7 +157,9 @@ export function MobilePaymentModal(props: MobilePaymentModalProps) {
                   <Text style={styles.confirmBtnText}>
                     {method === 'tarjeta'
                       ? `Pagar ${totalAmount.toFixed(2)} Bs con Tarjeta`
-                      : `Confirmar Pago QR (${totalAmount.toFixed(2)} Bs)`}
+                      : method === 'qr'
+                      ? `Confirmar Pago QR (${totalAmount.toFixed(2)} Bs)`
+                      : `Confirmar Transferencia (${totalAmount.toFixed(2)} Bs)`}
                   </Text>
                 </TouchableOpacity>
               </>
@@ -225,5 +262,64 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '800',
     letterSpacing: 0.3,
+  },
+  transferCard: {
+    backgroundColor: '#FAF8F5',
+    borderRadius: 14,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: '#EFEBE6',
+    marginBottom: 16,
+  },
+  transferTitle: {
+    fontSize: 14,
+    fontWeight: '800',
+    color: '#1C1510',
+  },
+  transferSub: {
+    fontSize: 11,
+    color: '#777',
+    marginTop: 2,
+    marginBottom: 12,
+  },
+  bankInfoBox: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 10,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: '#E8E3DC',
+    marginBottom: 12,
+  },
+  bankLabel: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#1C1510',
+  },
+  bankValue: {
+    fontSize: 12,
+    fontWeight: '800',
+    color: '#8C5E35',
+    marginTop: 2,
+  },
+  bankTitular: {
+    fontSize: 11,
+    color: '#666',
+    marginTop: 2,
+  },
+  refInputLabel: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#554A40',
+    marginBottom: 4,
+  },
+  refInput: {
+    height: 42,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#E8E3DC',
+    paddingHorizontal: 10,
+    fontSize: 13,
+    color: '#1C1510',
   },
 });

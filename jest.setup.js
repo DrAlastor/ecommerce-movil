@@ -24,3 +24,10 @@ jest.mock('react-native-file-access', () => ({
     unlink: jest.fn(async () => {}),
   },
 }));
+jest.mock('react-native-webview', () => {
+  const React = require('react');
+  const { View } = require('react-native');
+  return {
+    WebView: (props: any) => React.createElement(View, props),
+  };
+});

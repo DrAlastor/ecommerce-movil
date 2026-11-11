@@ -13,6 +13,19 @@ export interface TenantInfo {
 }
 
 export const AVAILABLE_TENANTS: Record<string, TenantInfo> = {
+  saas: {
+    id: 'saas',
+    name: 'FashionStore SaaS Platform',
+    tagline: 'Super Administrador Global',
+    category: 'Administración SaaS',
+    description: 'Gestión centralizada de inquilinos, monitoreo en tiempo real, auditoría global y métricas de Machine Learning.',
+    logoUrl: 'https://fashionstorestorages.blob.core.windows.net/media/logo-fashionstore.png',
+    localLogo: require('../../assets/logo-fashionstore.png'),
+    primaryColor: '#0F172A',
+    accentColor: '#6366F1',
+    surfaceColor: '#F8FAFC',
+    backgroundColor: '#FFFFFF',
+  },
   dressly: {
     id: 'dressly',
     name: 'Dressly Fashion Store',

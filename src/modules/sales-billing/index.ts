@@ -10,5 +10,10 @@ export { default as MyPurchasesScreen } from './use-cases/CU22-consultar-histori
 export * from './use-cases/CU23-procesar-pago-electronico';
 export { MobilePaymentModal } from './use-cases/CU23-procesar-pago-electronico/components/MobilePaymentModal';
 
+export * from './use-cases/CU27-registrar-venta-presencial/types/pos.types';
+export * from './use-cases/CU27-registrar-venta-presencial/services/pos.service';
+export { default as MobilePosScreen } from './use-cases/CU27-registrar-venta-presencial/screens/MobilePosScreen';
+export { default as SalesHistoryScreen } from './use-cases/CU27-registrar-venta-presencial/screens/SalesHistoryScreen';
+
 export * from './services/sales-billing.service';
 export * from './services/cart.service';

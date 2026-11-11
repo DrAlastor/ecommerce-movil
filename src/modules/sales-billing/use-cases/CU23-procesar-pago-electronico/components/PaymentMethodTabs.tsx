@@ -1,10 +1,3 @@
-/**
- * @caso-de-uso CU23 — Procesar pago electrónico
- * @subsistema Ventas, Pagos y Compras
- * @capa Boundary — Aplicación móvil
- * @responsabilidad Implementa una parte reutilizable de la interfaz de Aplicación móvil y comunica eventos al controlador de presentación.
- * @secuencia Cliente -> interfaz de pago -> controlador de pagos -> servicio de pago -> Pasarela de Pago/Pago/Venta.
- */
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import type { PaymentMethod } from '../types/payment.types';
@@ -24,7 +17,7 @@ export function PaymentMethodTabs({ currentMethod, onSelectMethod }: PaymentMeth
       >
         <Text style={styles.tabIcon}>💳</Text>
         <Text style={[styles.tabText, currentMethod === 'tarjeta' && styles.tabTextActive]}>
-          Tarjeta
+          Stripe / Tarjeta
         </Text>
       </TouchableOpacity>
 
@@ -33,9 +26,20 @@ export function PaymentMethodTabs({ currentMethod, onSelectMethod }: PaymentMeth
         onPress={() => onSelectMethod('qr')}
         activeOpacity={0.8}
       >
-        <Text style={styles.tabIcon}>📱</Text>
+        <Text style={styles.tabIcon}>🏁</Text>
         <Text style={[styles.tabText, currentMethod === 'qr' && styles.tabTextActive]}>
           Pago QR
+        </Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity
+        style={[styles.tab, currentMethod === 'transferencia' && styles.tabActive]}
+        onPress={() => onSelectMethod('transferencia')}
+        activeOpacity={0.8}
+      >
+        <Text style={styles.tabIcon}>🏦</Text>
+        <Text style={[styles.tabText, currentMethod === 'transferencia' && styles.tabTextActive]}>
+          Transferencia
         </Text>
       </TouchableOpacity>
     </View>
@@ -48,18 +52,19 @@ const styles = StyleSheet.create({
     backgroundColor: '#FAF8F5',
     borderRadius: 14,
     padding: 4,
-    marginBottom: 20,
+    marginBottom: 16,
     borderWidth: 1,
     borderColor: '#EFEBE6',
+    gap: 4,
   },
   tab: {
     flex: 1,
-    flexDirection: 'row',
+    flexDirection: 'column',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 12,
+    paddingVertical: 10,
     borderRadius: 10,
-    gap: 8,
+    gap: 4,
   },
   tabActive: {
     backgroundColor: '#1C1510',
@@ -73,9 +78,10 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   tabText: {
-    fontSize: 14,
+    fontSize: 11,
     fontWeight: '700',
     color: '#7D7065',
+    textAlign: 'center',
   },
   tabTextActive: {
     color: '#FFFFFF',
