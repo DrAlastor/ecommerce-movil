@@ -19,7 +19,7 @@ const MobileRecommendationCardComponent: React.FC<MobileRecommendationCardProps>
     <View style={styles.imageWrap}>
       <Image
         source={{
-          uri: item.imagen_principal || 'https://fashionstorestorage.blob.core.windows.net/productos/hero-model.jpg',
+          uri: item.imagen_principal || 'https://fashionstorestorages.blob.core.windows.net/productos/hero-model.jpg',
         }}
         style={styles.image}
         resizeMode="cover"

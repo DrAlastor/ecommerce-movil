@@ -119,25 +119,16 @@ export default function LoginScreen({ navigation }: any) {
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
-        {/* Botón volver atrás */}
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => navigation.navigate('Home')}
-          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-        >
-          <Text style={styles.backButtonText}>← Volver al inicio</Text>
-        </TouchableOpacity>
-
-        {/* Logo */}
+        {/* Logo Oficial Fashion Store */}
         <View style={styles.logoContainer}>
-          <Image source={require('../../../../../assets/logo.png')} style={styles.logoImage} resizeMode="contain" />
+          <Image source={require('../../../../../assets/logo-fashionstore.png')} style={styles.logoImage} resizeMode="cover" />
         </View>
 
         {/* Header */}
         <View style={styles.headerContainer}>
-          <Text style={styles.headerTitle}>Bienvenido de vuelta</Text>
+          <Text style={styles.headerTitle}>Fashion Store</Text>
           <Text style={styles.headerSubtitle}>
-            Inicia sesión para continuar
+            Plataforma Integral de Tiendas de Moda
           </Text>
         </View>
 
@@ -275,6 +266,11 @@ export default function LoginScreen({ navigation }: any) {
             <Text style={styles.registerLink}>Crear cuenta</Text>
           </TouchableOpacity>
         </View>
+
+        {/* Nota del SaaS */}
+        <View style={styles.saasNoteContainer}>
+          <Text style={styles.saasNoteText}>FashionStore SaaS • Clúster Azure Multi-Tenant</Text>
+        </View>
       </ScrollView>
     </KeyboardAvoidingView>
   );
@@ -296,8 +292,10 @@ const styles = StyleSheet.create({
     marginBottom: 40,
   },
   logoImage: {
-    width: 200,
-    height: 120,
+    width: 84,
+    height: 84,
+    borderRadius: 20,
+    backgroundColor: '#1A1A1A',
   },
   backButton: {
     alignSelf: 'flex-start',
@@ -450,5 +448,30 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
     color: '#1A1A1A',
+  },
+  guestButton: {
+    marginTop: 18,
+    paddingVertical: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: '#EAE6DF',
+    borderRadius: 12,
+    backgroundColor: '#FFFFFF',
+  },
+  guestButtonText: {
+    fontSize: 13.5,
+    fontWeight: '600',
+    color: '#8C5E35',
+  },
+  saasNoteContainer: {
+    marginTop: 24,
+    alignItems: 'center',
+  },
+  saasNoteText: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: '#999999',
+    letterSpacing: 0.3,
   },
 });

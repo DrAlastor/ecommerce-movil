@@ -8,6 +8,7 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, SafeAreaView, ActivityIndicator, ScrollView } from 'react-native';
 import api from '../../../../../services/api';
+import { notificationService } from '../../../../../services/notification.service';
 import { useAlert } from '../../../../../shared/context/AlertContext';
 
 export default function RegisterScreen({ navigation }: any) {
@@ -58,12 +59,16 @@ export default function RegisterScreen({ navigation }: any) {
     setErrorMsg('');
 
     try {
-      await api.post('/auth/register', {
+      const res = await api.post('/auth/register', {
         nombre: cleanNombre,
         apellido: cleanApellido,
         email: cleanEmail,
         password: cleanPassword,
       });
+
+      // Vincular token de notificaciones push de este dispositivo con la nueva cuenta
+      const newUserId = res?.data?.id_usuario;
+      notificationService.syncDeviceTokenWithBackend(undefined, newUserId || null);
 
       showAlert({
         title: '¡Cuenta Creada!',

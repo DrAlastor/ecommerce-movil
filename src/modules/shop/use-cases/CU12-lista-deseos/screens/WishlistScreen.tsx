@@ -24,7 +24,7 @@ export default function WishlistScreen({ navigation }: any) {
     >
       <Image
         source={{
-          uri: item.image || 'https://fashionstorestorage.blob.core.windows.net/productos/hero-model.jpg',
+          uri: item.image || 'https://fashionstorestorages.blob.core.windows.net/productos/hero-model.jpg',
         }}
         style={styles.image}
         resizeMode="cover"

@@ -1,6 +1,6 @@
 import React from 'react';
 import { createDrawerNavigator, DrawerContentScrollView, DrawerItemList } from '@react-navigation/drawer';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
 import AdminDashboardScreen from '../../pages/admin/AdminDashboardScreen';
 import ProfileScreen from '../../modules/users-security/use-cases/CU02-gestionar-perfil/screens/ProfileScreen';
 import CatalogScreen from '../../modules/catalog/use-cases/CU08-consultar-catalogo-productos/screens/CatalogScreen';
@@ -15,16 +15,35 @@ import WishlistScreen from '../../modules/shop/use-cases/CU12-lista-deseos/scree
 import BranchesScreen from '../../modules/branches-inventory/use-cases/CU14-consultar-sucursales/screens/BranchesScreen';
 import { VirtualFittingScreen } from '../../modules/mobile-experience';
 import { useAuth } from '../../modules/users-security/shared/AuthContext';
+import { useTenant } from '../context/TenantContext';
 
 
 const Drawer = createDrawerNavigator();
 
 function CustomDrawerContent(props: any) {
   const { user, rol, logout } = useAuth();
+  const { currentTenant, openSelector } = useTenant();
 
   return (
     <View style={styles.container}>
       <DrawerContentScrollView {...props}>
+        {/* Selector de Boutique Activa */}
+        <TouchableOpacity
+          style={styles.tenantBadgeBtn}
+          onPress={openSelector}
+          activeOpacity={0.8}
+        >
+          <Image
+            source={currentTenant.localLogo}
+            style={styles.tenantDrawerLogo}
+            resizeMode="cover"
+          />
+          <View style={{ flex: 1 }}>
+            <Text style={styles.tenantDrawerName} numberOfLines={1}>{currentTenant.name}</Text>
+            <Text style={styles.tenantDrawerSwitch}>Cambiar Tienda ▾</Text>
+          </View>
+        </TouchableOpacity>
+
         <View style={styles.drawerHeader}>
           <View style={styles.avatar}>
             <Text style={styles.avatarText}>
@@ -159,6 +178,37 @@ export default function AdminNavigator() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  tenantBadgeBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    backgroundColor: '#FFFFFF',
+    marginHorizontal: 16,
+    marginTop: 10,
+    marginBottom: 8,
+    padding: 10,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#EAE6DF',
+  },
+  tenantDrawerLogo: {
+    width: 36,
+    height: 36,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#EAE6DF',
+  },
+  tenantDrawerName: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#1A1A1A',
+  },
+  tenantDrawerSwitch: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: '#8C5E35',
+    marginTop: 1,
   },
   drawerHeader: {
     padding: 20,

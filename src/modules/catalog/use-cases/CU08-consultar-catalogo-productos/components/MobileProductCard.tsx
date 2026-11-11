@@ -37,7 +37,7 @@ const MobileProductCardComponent: React.FC<MobileProductCardProps> = ({
           source={{
             uri:
               item.imagen_principal ||
-              'https://fashionstorestorage.blob.core.windows.net/productos/hero-model.jpg',
+              'https://fashionstorestorages.blob.core.windows.net/productos/hero-model.jpg',
           }}
           style={styles.productImage}
           resizeMode="cover"

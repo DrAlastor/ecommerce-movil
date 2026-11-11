@@ -15,9 +15,11 @@ import {
   SafeAreaView,
   ActivityIndicator,
   RefreshControl,
+  Image,
 } from 'react-native';
 import { useAuth } from '../../../../users-security/shared/AuthContext';
 import { useShop } from '../../../../../shared/context/ShopContext';
+import { useTenant } from '../../../../../shared/context/TenantContext';
 import { useMobileCatalog } from '../hooks/useMobileCatalog';
 import { SearchHeader } from '../components/SearchHeader';
 import { CategoryPills } from '../components/CategoryPills';
@@ -28,6 +30,7 @@ import type { MobileCatalogProduct } from '../../../services/catalog.service';
 export default function CatalogScreen({ navigation }: any) {
   const { isAuthenticated, logout } = useAuth();
   const { cartItemCount, wishlistCount } = useShop();
+  const { currentTenant } = useTenant();
 
   const {
     products,
@@ -86,9 +89,24 @@ export default function CatalogScreen({ navigation }: any) {
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* Header Superior */}
+      {/* Header Superior — Boutique Asignada */}
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Dressly</Text>
+        <View style={styles.tenantSelectorBtn}>
+          <Image
+            source={currentTenant.localLogo}
+            style={styles.tenantHeaderLogo}
+            resizeMode="cover"
+          />
+          <View style={styles.tenantHeaderTextContainer}>
+            <Text style={styles.headerTitle} numberOfLines={1}>
+              {currentTenant.name.replace(' Fashion Store', '').replace(' Athletics & Sportswear', '')}
+            </Text>
+            <Text style={styles.tenantHeaderSub} numberOfLines={1}>
+              {currentTenant.category}
+            </Text>
+          </View>
+        </View>
+
         <View style={styles.headerActions}>
           <TouchableOpacity
             style={styles.iconBtn}
@@ -245,12 +263,50 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingVertical: 10,
     borderBottomWidth: 1,
     borderBottomColor: '#E8E8E8',
     backgroundColor: '#FFFFFF',
   },
-  headerTitle: { fontSize: 22, fontWeight: 'bold', fontFamily: 'Georgia', color: '#1A1A1A' },
+  tenantSelectorBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+    marginRight: 12,
+  },
+  tenantHeaderLogo: {
+    width: 38,
+    height: 38,
+    borderRadius: 9,
+    marginRight: 10,
+    borderWidth: 1,
+    borderColor: '#EAE6DF',
+  },
+  tenantHeaderTextContainer: {
+    flex: 1,
+  },
+  tenantRowTitle: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  headerTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    fontFamily: 'Georgia',
+    color: '#1A1A1A',
+  },
+  dropdownArrow: {
+    fontSize: 14,
+    color: '#8C5E35',
+    fontWeight: '700',
+  },
+  tenantHeaderSub: {
+    fontSize: 10.5,
+    fontWeight: '600',
+    color: '#777777',
+    letterSpacing: 0.2,
+  },
   headerActions: { flexDirection: 'row', alignItems: 'center' },
   iconBtn: { marginLeft: 12, position: 'relative' },
   iconText: { fontSize: 20, color: '#1A1A1A' },

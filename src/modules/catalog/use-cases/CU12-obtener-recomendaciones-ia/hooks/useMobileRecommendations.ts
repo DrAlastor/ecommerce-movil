@@ -69,7 +69,7 @@ export function useMobileRecommendations() {
     reviewsCount: 12,
     image:
       item.imagen_principal ||
-      'https://fashionstorestorage.blob.core.windows.net/productos/hero-model.jpg',
+      'https://fashionstorestorages.blob.core.windows.net/productos/hero-model.jpg',
     isNew: item.id_producto > 15,
     isSale: item.tiene_descuento,
     description: item.descripcion || '',

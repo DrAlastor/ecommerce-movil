@@ -6,6 +6,7 @@
  * @secuencia Cliente -> catálogo y filtros -> controlador de catálogo -> servicio de catálogo -> Producto/Categoría/Colección/Promoción.
  */
 import { useState, useEffect, useCallback } from 'react';
+import { useTenant } from '../../../../../shared/context/TenantContext';
 import {
   MobileCatalogService,
   MobileCatalogProduct,
@@ -14,6 +15,8 @@ import {
 import type { Product } from '../../../../../types/shop.types';
 
 export function useMobileCatalog() {
+  const { tenantKey } = useTenant();
+
   // Estados de datos
   const [products, setProducts] = useState<MobileCatalogProduct[]>([]);
   const [filterMeta, setFilterMeta] = useState<MobileCatalogFilterMeta | null>(null);
@@ -27,7 +30,7 @@ export function useMobileCatalog() {
   const [filterModalVisible, setFilterModalVisible] = useState(false);
   const [activeFilters, setActiveFilters] = useState<any>({});
 
-  // Cargar metadatos de filtros una vez
+  // Cargar metadatos de filtros al montar o al cambiar de tenant
   useEffect(() => {
     let isMounted = true;
     MobileCatalogService.getFilterMetadata()
@@ -40,7 +43,14 @@ export function useMobileCatalog() {
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [tenantKey]);
+
+  // Al cambiar de tienda/tenant, reiniciar filtros y búsqueda
+  useEffect(() => {
+    setSelectedCategory('all');
+    setSearchQuery('');
+    setActiveFilters({});
+  }, [tenantKey]);
 
   // Cargar catálogo de productos
   const loadProducts = useCallback(
@@ -102,7 +112,7 @@ export function useMobileCatalog() {
         setRefreshing(false);
       }
     },
-    [searchQuery, selectedCategory, activeFilters]
+    [searchQuery, selectedCategory, activeFilters, tenantKey]
   );
 
   useEffect(() => {
@@ -130,7 +140,7 @@ export function useMobileCatalog() {
     reviewsCount: 12,
     image:
       item.imagen_principal ||
-      'https://fashionstorestorage.blob.core.windows.net/productos/hero-model.jpg',
+      'https://fashionstorestorages.blob.core.windows.net/productos/hero-model.jpg',
     isNew: item.id_producto > 15,
     isSale: item.tiene_descuento,
     description: item.descripcion || '',

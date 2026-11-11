@@ -28,7 +28,7 @@ export const MobileProductGallery: React.FC<MobileProductGalleryProps> = ({
   has3DModel,
 }) => {
   const activeImage = images[activeImageIndex] || images[0] || {
-    url: 'https://fashionstorestorage.blob.core.windows.net/productos/hero-model.jpg',
+    url: 'https://fashionstorestorages.blob.core.windows.net/productos/hero-model.jpg',
   };
 
   return (

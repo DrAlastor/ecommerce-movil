@@ -19,7 +19,10 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { AuthProvider, useAuth } from './src/modules/users-security/shared/AuthContext';
 import { ShopProvider } from './src/shared/context/ShopContext';
 import { AlertProvider } from './src/shared/context/AlertContext';
+import { TenantProvider } from './src/shared/context/TenantContext';
 import AdminNavigator from './src/shared/layouts/AdminNavigator';
+import SaasSuperAdminScreen from './src/pages/admin/SaasSuperAdminScreen';
+import { notificationService } from './src/services/notification.service';
 
 // Screens
 import LoginScreen from './src/modules/users-security/use-cases/CU01-gestionar-acceso/screens/LoginScreen';
@@ -65,7 +68,7 @@ const RootStack = createNativeStackNavigator<RootStackParamList>();
 function LoadingScreen() {
   return (
     <View style={loadingStyles.container}>
-      <Image source={require('./src/assets/logo.png')} style={loadingStyles.logoImage} resizeMode="contain" />
+      <Image source={require('./src/assets/logo-fashionstore.png')} style={loadingStyles.logoImage} resizeMode="contain" />
       <ActivityIndicator
         size="large"
         color="#1A1A1A"
@@ -94,23 +97,40 @@ const loadingStyles = StyleSheet.create({
 
 // Navegación principal
 function RootNavigator() {
-  const { isAuthenticated, isLoading, user, rol } = useAuth();
+  const { isAuthenticated, isLoading, user, rol, isGuest, isSuperAdmin } = useAuth();
 
   if (isLoading) {
     return <LoadingScreen />;
   }
 
+  // 1. Super Administrador del SaaS FashionStore (CU04 / CU05 / Monitoreo / ML)
+  if (isAuthenticated && isSuperAdmin) {
+    return <SaasSuperAdminScreen />;
+  }
+
   const isClient = (rol?.nombre || '').toLowerCase().trim() === 'cliente';
   const isStaff = Boolean(user?.empleado) || (Boolean(rol?.nombre) && !isClient);
 
-  // Si está autenticado y es personal/empleado, mostramos el Panel de Administración (Drawer)
+  // 2. Personal / Empleado de boutique (Admin, Cajero, Encargado, etc.)
   if (isAuthenticated && isStaff) {
     return <AdminNavigator />;
   }
 
-  // Flujo normal para clientes o usuarios no autenticados
+  // 3. Usuario no autenticado -> Pantalla inicial única y obligatoria: LOGIN
+  if (!isAuthenticated) {
+    return (
+      <RootStack.Navigator screenOptions={{ headerShown: false }} initialRouteName="Login">
+        <RootStack.Screen name="Login" component={LoginScreen} />
+        <RootStack.Screen name="Register" component={RegisterScreen} />
+        <RootStack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
+        <RootStack.Screen name="ResetPassword" component={ResetPasswordScreen} />
+      </RootStack.Navigator>
+    );
+  }
+
+  // 4. Cliente autenticado -> Catálogo exclusivo de la boutique descubierta por su correo
   return (
-    <RootStack.Navigator screenOptions={{ headerShown: false }}>
+    <RootStack.Navigator screenOptions={{ headerShown: false }} initialRouteName="Home">
       <RootStack.Screen name="Home" component={CatalogScreen} />
       <RootStack.Screen name="ProductDetail" component={ProductDetailScreen} />
       <RootStack.Screen name="Recommendations" component={RecommendationsScreen} />
@@ -122,14 +142,6 @@ function RootNavigator() {
       <RootStack.Screen name="Profile" component={ProfileScreen} />
       <RootStack.Screen name="MyReservations" component={MyReservationsScreen} />
       <RootStack.Screen name="VirtualFitting" component={VirtualFittingScreen} />
-      {!isAuthenticated && (
-        <>
-          <RootStack.Screen name="Login" component={LoginScreen} />
-          <RootStack.Screen name="Register" component={RegisterScreen} />
-          <RootStack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
-          <RootStack.Screen name="ResetPassword" component={ResetPasswordScreen} />
-        </>
-      )}
     </RootStack.Navigator>
   );
 }
@@ -137,17 +149,29 @@ function RootNavigator() {
 function App() {
   const isDarkMode = useColorScheme() === 'dark';
 
+  React.useEffect(() => {
+    notificationService.requestUserPermission().then(async (granted) => {
+      if (granted) {
+        await notificationService.syncDeviceTokenWithBackend();
+      }
+    });
+    const cleanup = notificationService.initializeListeners();
+    return cleanup;
+  }, []);
+
   return (
     <SafeAreaProvider>
       <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} />
       <AlertProvider>
-        <AuthProvider>
-          <ShopProvider>
-            <NavigationContainer>
-              <RootNavigator />
-            </NavigationContainer>
-          </ShopProvider>
-        </AuthProvider>
+        <TenantProvider>
+          <AuthProvider>
+            <ShopProvider>
+              <NavigationContainer>
+                <RootNavigator />
+              </NavigationContainer>
+            </ShopProvider>
+          </AuthProvider>
+        </TenantProvider>
       </AlertProvider>
     </SafeAreaProvider>
   );

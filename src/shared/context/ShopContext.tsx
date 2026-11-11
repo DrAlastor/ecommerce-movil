@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
 import { useAuth } from '../../modules/users-security/shared/AuthContext';
+import { useTenant } from './TenantContext';
 import type { ReactNode } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { Product, CartItem } from '../../types/shop.types';
@@ -25,11 +26,12 @@ const ShopContext = createContext<ShopContextType | undefined>(undefined);
 
 export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const { user, isLoading } = useAuth();
+  const { tenantKey } = useTenant();
   
   const storageSuffix = user ? `_user_${user.id_usuario}` : '_guest';
-  const cartKey = `dressly_cart${storageSuffix}`;
-  const wishlistKey = `dressly_wishlist${storageSuffix}`;
-  const wishlistProductsKey = `dressly_wishlist_prods${storageSuffix}`;
+  const cartKey = `${tenantKey}_cart${storageSuffix}`;
+  const wishlistKey = `${tenantKey}_wishlist${storageSuffix}`;
+  const wishlistProductsKey = `${tenantKey}_wishlist_prods${storageSuffix}`;
 
   const [cart, setCart] = useState<CartItem[]>([]);
   const [wishlist, setWishlist] = useState<number[]>([]);
