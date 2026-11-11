@@ -1,4 +1,4 @@
-import { Platform, PermissionsAndroid, Alert } from 'react-native';
+import { Platform, PermissionsAndroid, NativeModules } from 'react-native';
 import {
   getMessaging,
   getToken,
@@ -127,20 +127,13 @@ export const notificationService = {
       // 1. Mensajes recibidos mientras la app está abierta en primer plano
       const unsubscribeForeground = onMessage(messagingInstance, async (remoteMessage: RemoteMessage) => {
         console.log('Notificación en primer plano recibida:', remoteMessage);
-        const title = remoteMessage.notification?.title || 'Fashion Store';
-        const body = remoteMessage.notification?.body || '';
+        const title = remoteMessage.notification?.title || (remoteMessage.data as any)?.title || 'Fashion Store';
+        const body = remoteMessage.notification?.body || (remoteMessage.data as any)?.body || '';
 
-        Alert.alert(title, body, [
-          {
-            text: 'Ver',
-            onPress: () => {
-              if (onNotificationPress && remoteMessage.data) {
-                onNotificationPress(remoteMessage.data);
-              }
-            },
-          },
-          { text: 'Cerrar', style: 'cancel' },
-        ]);
+        // Disparar la notificación nativa en la barra superior del sistema (Heads-Up Banner)
+        if (Platform.OS === 'android' && NativeModules.LocalNotification?.displayNotification) {
+          NativeModules.LocalNotification.displayNotification(title, body);
+        }
       });
 
       // 2. Notificación presionada mientras la app estaba en segundo plano (minimizada)
