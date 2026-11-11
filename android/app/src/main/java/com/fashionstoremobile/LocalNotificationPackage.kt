@@ -14,3 +14,4 @@ class LocalNotificationPackage : ReactPackage {
         return emptyList()
     }
 }
+

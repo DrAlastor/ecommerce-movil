@@ -51,3 +51,4 @@ class LocalNotificationModule(private val reactContext: ReactApplicationContext)
         }
     }
 }
+
