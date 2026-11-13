@@ -4,11 +4,9 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
-  Alert,
   ActivityIndicator,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { CameraQrScannerModal } from './CameraQrScannerModal';
 import { ManageQrConfigModal } from './ManageQrConfigModal';
 import { qrManagementService, CompanyQrSettings } from '../services/qr-management.service';
 import { OfflineImage as Image } from '../../../../../services/offline/OfflineImage';
@@ -21,7 +19,7 @@ interface QrPaymentViewProps {
   isQrScanned?: boolean;
 }
 
-export function QrPaymentView({ totalAmount, onQrScanned, isQrScanned }: QrPaymentViewProps) {
+export function QrPaymentView({ totalAmount }: QrPaymentViewProps) {
   const { rol, isSuperAdmin } = useAuth();
   const { tenantKey, currentTenant } = useTenant();
 
@@ -36,9 +34,7 @@ export function QrPaymentView({ totalAmount, onQrScanned, isQrScanned }: QrPayme
 
   const [companyQr, setCompanyQr] = useState<CompanyQrSettings | null>(null);
   const [loadingQr, setLoadingQr] = useState<boolean>(true);
-  const [isCameraOpen, setIsCameraOpen] = useState<boolean>(false);
   const [isManageModalOpen, setIsManageModalOpen] = useState<boolean>(false);
-  const [scannedCode, setScannedCode] = useState<string | null>(null);
   const [secondsLeft, setSecondsLeft] = useState<number>(300);
 
   // Cargar configuración de QR oficial del servidor o almacenamiento offline
@@ -47,15 +43,12 @@ export function QrPaymentView({ totalAmount, onQrScanned, isQrScanned }: QrPayme
       setLoadingQr(true);
       const settings = await qrManagementService.getCompanyQrSettings(tenantKey);
       setCompanyQr(settings);
-      // Guardar copia local en caso de desconexión
       await AsyncStorage.setItem(`official_qr_${tenantKey}`, JSON.stringify(settings));
     } catch {
-      // Intentar cargar de almacenamiento local offline
       const cached = await AsyncStorage.getItem(`official_qr_${tenantKey}`);
       if (cached) {
         setCompanyQr(JSON.parse(cached));
       } else {
-        // Fallback predeterminado elegante
         setCompanyQr({
           codigo_empresa: tenantKey,
           nombre_comercial: currentTenant?.name || 'Dressly Fashion Store',
@@ -90,15 +83,6 @@ export function QrPaymentView({ totalAmount, onQrScanned, isQrScanned }: QrPayme
     return `${m}:${s < 10 ? '0' : ''}${s}`;
   };
 
-  const handleScanSuccess = (data: string) => {
-    setScannedCode(data);
-    setIsCameraOpen(false);
-    if (onQrScanned) {
-      onQrScanned(data);
-    }
-    Alert.alert('QR Escaneado', 'Código QR reconocido exitosamente. Ya puedes confirmar tu pago.');
-  };
-
   // Determinar la imagen o código del QR único
   const getQrDisplayUri = () => {
     if (companyQr?.qr_tipo_cobro === 'imagen' && companyQr?.qr_imagen_url) {
@@ -123,14 +107,14 @@ export function QrPaymentView({ totalAmount, onQrScanned, isQrScanned }: QrPayme
         <View style={styles.adminQrBar}>
           <View style={{ flex: 1 }}>
             <Text style={styles.adminQrTitle}>⚙️ Gestión de QR Oficial</Text>
-            <Text style={styles.adminQrSub}>Configura o sube el QR único para tus clientes</Text>
+            <Text style={styles.adminQrSub}>Sube el QR desde la galería para tus clientes</Text>
           </View>
           <TouchableOpacity
             style={styles.adminQrBtn}
             onPress={() => setIsManageModalOpen(true)}
             activeOpacity={0.8}
           >
-            <Text style={styles.adminQrBtnText}>Subir / Editar QR</Text>
+            <Text style={styles.adminQrBtnText}>Subir de Galería</Text>
           </TouchableOpacity>
         </View>
       )}
@@ -159,7 +143,7 @@ export function QrPaymentView({ totalAmount, onQrScanned, isQrScanned }: QrPayme
 
         {/* Monto a Cobrar */}
         <View style={styles.amountBadge}>
-          <Text style={styles.amountLabel}>Monto exacto a pagar:</Text>
+          <Text style={styles.amountLabel}>Monto exacto a transferir:</Text>
           <Text style={styles.amountValue}>{totalAmount.toFixed(2)} Bs</Text>
         </View>
 
@@ -176,49 +160,23 @@ export function QrPaymentView({ totalAmount, onQrScanned, isQrScanned }: QrPayme
           <Text style={styles.infoNit}>NIT / CI: {nitOficial}</Text>
         </View>
 
-        {/* Estado de Escaneo con Cámara */}
-        {(isQrScanned || scannedCode) && (
-          <View style={styles.scannedSuccessBanner}>
-            <Text style={styles.scannedSuccessText}>✓ Código QR Escaneado y Validado</Text>
-            <Text style={styles.scannedCodeSub}>
-              {scannedCode || 'Transacción de cobro vinculada correctamente'}
-            </Text>
-          </View>
-        )}
-
-        {/* Botón de Escanear QR con Cámara */}
-        <TouchableOpacity
-          style={styles.btnScanCamera}
-          onPress={() => setIsCameraOpen(true)}
-          activeOpacity={0.85}
-        >
-          <Text style={styles.btnScanCameraText}>📷 Abrir Cámara para Escanear QR</Text>
-        </TouchableOpacity>
-
         {/* Instrucciones Clarificadoras para el Cliente */}
         <View style={styles.instructions}>
-          <Text style={styles.instructionsTitle}>Pasos para completar tu compra:</Text>
+          <Text style={styles.instructionsTitle}>Pasos para pagar desde tu app bancaria:</Text>
           <Text style={styles.instructionStep}>
-            1. Abre tu aplicación bancaria boliviana (BMSC, BNB, BCP, Banco Unión, Yape, etc.).
+            1. Abre tu aplicación bancaria móvil (Banco Unión, BCP, BNB, Mercantil, Yape, etc.).
           </Text>
           <Text style={styles.instructionStep}>
-            2. Escanea el código QR único arriba o transfiere los {totalAmount.toFixed(2)} Bs.
+            2. Escanea este código QR desde la cámara de tu app bancaria.
           </Text>
           <Text style={styles.instructionStep}>
-            3. Si deseas validar el comprobante con tu cámara, pulsa el botón "Abrir Cámara para Escanear QR".
+            3. Confirma la transferencia de {totalAmount.toFixed(2)} Bs en tu banco.
           </Text>
           <Text style={styles.instructionStep}>
-            4. Presiona "Confirmar Pago" para emitir tu factura y registrar la venta.
+            4. Presiona el botón "Confirmar Pago" aquí abajo para emitir tu factura electrónica.
           </Text>
         </View>
       </View>
-
-      {/* Modal de Cámara */}
-      <CameraQrScannerModal
-        visible={isCameraOpen}
-        onClose={() => setIsCameraOpen(false)}
-        onScanSuccess={handleScanSuccess}
-      />
 
       {/* Modal de Gestión y Subida de QR (Admin/Cajero) */}
       <ManageQrConfigModal
@@ -385,40 +343,6 @@ const styles = StyleSheet.create({
   infoNit: {
     fontSize: 11,
     color: '#6B7280',
-  },
-  scannedSuccessBanner: {
-    backgroundColor: '#ECFDF5',
-    borderColor: '#10B981',
-    borderWidth: 1,
-    borderRadius: 10,
-    padding: 10,
-    width: '100%',
-    marginBottom: 14,
-    alignItems: 'center',
-  },
-  scannedSuccessText: {
-    color: '#065F46',
-    fontWeight: '700',
-    fontSize: 13,
-  },
-  scannedCodeSub: {
-    color: '#047857',
-    fontSize: 11,
-    marginTop: 2,
-  },
-  btnScanCamera: {
-    backgroundColor: '#1F2937',
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    borderRadius: 12,
-    width: '100%',
-    alignItems: 'center',
-    marginBottom: 14,
-  },
-  btnScanCameraText: {
-    color: '#FFFFFF',
-    fontWeight: '700',
-    fontSize: 14,
   },
   instructions: {
     backgroundColor: '#FAF7F2',

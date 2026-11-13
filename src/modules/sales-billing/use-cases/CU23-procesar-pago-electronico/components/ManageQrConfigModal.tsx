@@ -12,7 +12,7 @@ import {
 } from 'react-native';
 import { qrManagementService, CompanyQrSettings } from '../services/qr-management.service';
 import { OfflineImage as Image } from '../../../../../services/offline/OfflineImage';
-import { CameraQrScannerModal } from './CameraQrScannerModal';
+import { galleryPickerService } from '../../../../../services/galleryPicker.service';
 
 interface ManageQrConfigModalProps {
   visible: boolean;
@@ -55,7 +55,7 @@ export function ManageQrConfigModal({
   );
   const [qrImageUrl, setQrImageUrl] = useState<string>(currentSettings?.qr_imagen_url || '');
   const [saving, setSaving] = useState(false);
-  const [isScannerOpen, setIsScannerOpen] = useState(false);
+  const [isOpeningGallery, setIsOpeningGallery] = useState(false);
 
   // Generador dinámico de URL para preview de QR usando qrserver API
   const generatePreviewUrl = () => {
@@ -68,13 +68,32 @@ export function ManageQrConfigModal({
     return `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${qrText}`;
   };
 
+  const handlePickFromGallery = async () => {
+    try {
+      setIsOpeningGallery(true);
+      const res = await galleryPickerService.pickQrImageFromGallery();
+      if (!res.cancelled && res.dataUrl) {
+        setQrImageUrl(res.dataUrl);
+        setTipoCobro('imagen');
+        Alert.alert(
+          '¡Imagen QR Seleccionada!',
+          'Se ha cargado la imagen del código QR de tu galería. Ahora puedes guardarla para que aparezca a todos los clientes.'
+        );
+      }
+    } catch (err: any) {
+      Alert.alert('Error', err.message || 'No se pudo abrir la galería del teléfono.');
+    } finally {
+      setIsOpeningGallery(false);
+    }
+  };
+
   const handleSave = async () => {
     if (!numeroCuenta.trim() && tipoCobro === 'cuenta') {
       Alert.alert('Campo Requerido', 'Por favor ingresa el número de cuenta bancaria o celular.');
       return;
     }
     if (!qrImageUrl.trim() && tipoCobro === 'imagen') {
-      Alert.alert('QR Requerido', 'Por favor escanea o introduce una imagen/enlace para el código QR oficial.');
+      Alert.alert('QR Requerido', 'Por favor selecciona la imagen del código QR desde tu galería.');
       return;
     }
 
@@ -108,28 +127,6 @@ export function ManageQrConfigModal({
     }
   };
 
-  const handleScannedQr = (code: string) => {
-    setIsScannerOpen(false);
-    // Si el QR escaneado es una imagen o URL
-    if (code.startsWith('http') || code.startsWith('data:image')) {
-      setQrImageUrl(code);
-      setTipoCobro('imagen');
-    } else {
-      // Si contiene texto de cuenta
-      const parts = code.split('|');
-      let extractedAccount = code;
-      parts.forEach((p) => {
-        if (p.startsWith('CTA:')) extractedAccount = p.replace('CTA:', '');
-      });
-      setNumeroCuenta(extractedAccount);
-      setQrImageUrl(
-        `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(code)}`
-      );
-      setTipoCobro('imagen');
-    }
-    Alert.alert('QR Capturado', 'Se ha extraído y cargado el código QR exitosamente.');
-  };
-
   return (
     <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
       <View style={styles.overlay}>
@@ -152,22 +149,55 @@ export function ManageQrConfigModal({
             <Text style={styles.label}>Modalidad del Código QR:</Text>
             <View style={styles.modeRow}>
               <TouchableOpacity
-                style={[styles.modeTab, tipoCobro === 'cuenta' && styles.modeTabActive]}
-                onPress={() => setTipoCobro('cuenta')}
-              >
-                <Text style={[styles.modeTabText, tipoCobro === 'cuenta' && styles.modeTabTextActive]}>
-                  🏦 Cuenta Bancaria (Generar)
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity
                 style={[styles.modeTab, tipoCobro === 'imagen' && styles.modeTabActive]}
                 onPress={() => setTipoCobro('imagen')}
               >
                 <Text style={[styles.modeTabText, tipoCobro === 'imagen' && styles.modeTabTextActive]}>
-                  🖼️ Subir / Escanear QR
+                  🖼️ Subir QR de Galería
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.modeTab, tipoCobro === 'cuenta' && styles.modeTabActive]}
+                onPress={() => setTipoCobro('cuenta')}
+              >
+                <Text style={[styles.modeTabText, tipoCobro === 'cuenta' && styles.modeTabTextActive]}>
+                  🏦 Generar con N° Cuenta
                 </Text>
               </TouchableOpacity>
             </View>
+
+            {/* Opción Imagen de Galería (Principal) */}
+            {tipoCobro === 'imagen' && (
+              <View style={styles.galleryCardSection}>
+                <Text style={styles.galleryInstructions}>
+                  Selecciona la foto o captura del código QR de tu banco desde el almacenamiento de tu teléfono:
+                </Text>
+
+                <TouchableOpacity
+                  style={styles.btnOpenGallery}
+                  onPress={handlePickFromGallery}
+                  disabled={isOpeningGallery}
+                  activeOpacity={0.85}
+                >
+                  {isOpeningGallery ? (
+                    <ActivityIndicator color="#fff" size="small" />
+                  ) : (
+                    <Text style={styles.btnOpenGalleryText}>
+                      🖼️ Abrir Galería y Elegir Foto del QR
+                    </Text>
+                  )}
+                </TouchableOpacity>
+
+                {qrImageUrl ? (
+                  <View style={styles.selectedImageBanner}>
+                    <Text style={styles.selectedImageText}>✓ Imagen de QR cargada correctamente</Text>
+                    <TouchableOpacity onPress={() => setQrImageUrl('')}>
+                      <Text style={styles.removeImageText}>Quitar</Text>
+                    </TouchableOpacity>
+                  </View>
+                ) : null}
+              </View>
+            )}
 
             {/* Banco */}
             <Text style={styles.label}>Entidad Financiera o Billetera:</Text>
@@ -216,28 +246,6 @@ export function ManageQrConfigModal({
               onChangeText={setDocTitular}
             />
 
-            {/* Si es imagen o escaneado */}
-            {tipoCobro === 'imagen' && (
-              <View style={styles.uploadSection}>
-                <Text style={styles.label}>Imagen del Código QR Oficial:</Text>
-                <TextInput
-                  style={styles.input}
-                  placeholder="URL o data:image del QR"
-                  placeholderTextColor="#999"
-                  value={qrImageUrl}
-                  onChangeText={setQrImageUrl}
-                />
-
-                <TouchableOpacity
-                  style={styles.scanBtn}
-                  onPress={() => setIsScannerOpen(true)}
-                  activeOpacity={0.8}
-                >
-                  <Text style={styles.scanBtnText}>📷 Escanear con Cámara para Extraer QR</Text>
-                </TouchableOpacity>
-              </View>
-            )}
-
             {/* Vista previa del QR que verá el cliente */}
             <View style={styles.previewBox}>
               <Text style={styles.previewTitle}>Vista Previa del QR para Clientes</Text>
@@ -273,13 +281,6 @@ export function ManageQrConfigModal({
           </View>
         </View>
       </View>
-
-      {/* Modal Cámara para escanear QR */}
-      <CameraQrScannerModal
-        visible={isScannerOpen}
-        onClose={() => setIsScannerOpen(false)}
-        onScanSuccess={handleScannedQr}
-      />
     </Modal>
   );
 }
@@ -344,13 +345,13 @@ const styles = StyleSheet.create({
   modeRow: {
     flexDirection: 'row',
     gap: 8,
-    marginBottom: 8,
+    marginBottom: 10,
   },
   modeTab: {
     flex: 1,
-    paddingVertical: 10,
+    paddingVertical: 12,
     paddingHorizontal: 8,
-    borderRadius: 10,
+    borderRadius: 12,
     borderWidth: 1.5,
     borderColor: '#E5E7EB',
     backgroundColor: '#F9FAFB',
@@ -367,7 +368,54 @@ const styles = StyleSheet.create({
   },
   modeTabTextActive: {
     color: '#8C5E35',
+    fontWeight: '800',
+  },
+  galleryCardSection: {
+    backgroundColor: '#FAF7F2',
+    borderWidth: 1.5,
+    borderColor: '#EBDCCB',
+    borderRadius: 14,
+    padding: 14,
+    marginBottom: 8,
+  },
+  galleryInstructions: {
+    fontSize: 12,
+    color: '#554A40',
+    marginBottom: 10,
+    lineHeight: 16,
+  },
+  btnOpenGallery: {
+    backgroundColor: '#8C5E35',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 10,
+    alignItems: 'center',
+  },
+  btnOpenGalleryText: {
+    color: '#FFFFFF',
+    fontWeight: '800',
+    fontSize: 13,
+  },
+  selectedImageBanner: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    backgroundColor: '#ECFDF5',
+    borderWidth: 1,
+    borderColor: '#A7F3D0',
+    borderRadius: 8,
+    padding: 10,
+    marginTop: 10,
+  },
+  selectedImageText: {
+    color: '#065F46',
     fontWeight: '700',
+    fontSize: 12,
+  },
+  removeImageText: {
+    color: '#DC2626',
+    fontWeight: '700',
+    fontSize: 12,
   },
   bankScroll: {
     flexDirection: 'row',
@@ -403,22 +451,6 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     fontSize: 14,
     color: '#111827',
-  },
-  uploadSection: {
-    marginTop: 6,
-  },
-  scanBtn: {
-    backgroundColor: '#E6A265',
-    paddingVertical: 10,
-    paddingHorizontal: 14,
-    borderRadius: 10,
-    alignItems: 'center',
-    marginTop: 8,
-  },
-  scanBtnText: {
-    color: '#fff',
-    fontSize: 13,
-    fontWeight: '700',
   },
   previewBox: {
     backgroundColor: '#FDFBF7',

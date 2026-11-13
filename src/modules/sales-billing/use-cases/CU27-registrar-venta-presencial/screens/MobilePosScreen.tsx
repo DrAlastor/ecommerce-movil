@@ -587,13 +587,13 @@ export default function MobilePosScreen({ navigation }: any) {
                       Titular: {companyQr?.qr_titular || currentTenant?.name || 'FashionStore'}
                     </Text>
 
-                    {/* Botón para Configurar o Subir QR desde el POS */}
+                    {/* Botón para Configurar o Subir QR desde la galería */}
                     <TouchableOpacity
                       style={styles.btnConfigPosQr}
                       onPress={() => setIsManageQrOpen(true)}
                       activeOpacity={0.8}
                     >
-                      <Text style={styles.btnConfigPosQrText}>⚙️ Cambiar / Subir Imagen de QR</Text>
+                      <Text style={styles.btnConfigPosQrText}>🖼️ Subir QR desde Galería</Text>
                     </TouchableOpacity>
                   </View>
                 )}

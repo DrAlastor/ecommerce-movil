@@ -46,3 +46,4 @@ export const qrManagementService = {
     return res.data?.data || res.data;
   },
 };
+
