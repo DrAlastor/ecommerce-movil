@@ -4,61 +4,16 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
-  ScrollView,
   Alert,
+  ActivityIndicator,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { CameraQrScannerModal } from './CameraQrScannerModal';
+import { ManageQrConfigModal } from './ManageQrConfigModal';
+import { qrManagementService, CompanyQrSettings } from '../services/qr-management.service';
 import { OfflineImage as Image } from '../../../../../services/offline/OfflineImage';
-
-export interface BankAccountOption {
-  id: string;
-  name: string;
-  banco: string;
-  cuenta: string;
-  titular: string;
-  color: string;
-  badge: string;
-}
-
-export const BANK_QR_ACCOUNTS: BankAccountOption[] = [
-  {
-    id: 'yape',
-    name: 'Yape / BCP',
-    banco: 'Banco de Crédito (BCP)',
-    cuenta: 'Cel: 71234567 • Cta: 201-5093821',
-    titular: 'FashionStore S.R.L.',
-    color: '#7C3AED',
-    badge: 'Yape Móvil',
-  },
-  {
-    id: 'bmsc',
-    name: 'QR Simple (BMSC)',
-    banco: 'Mercantil Santa Cruz',
-    cuenta: 'Cta Cte: 4010-892341-01',
-    titular: 'FashionStore S.R.L. (NIT: 1029384756)',
-    color: '#0D9488',
-    badge: 'QR Simple',
-  },
-  {
-    id: 'bnb',
-    name: 'BNB Móvil',
-    banco: 'Banco Nacional de Bolivia',
-    cuenta: 'Cta: 150-0294810-01',
-    titular: 'FashionStore Bolivia',
-    color: '#2563EB',
-    badge: 'BNB',
-  },
-  {
-    id: 'tigo',
-    name: 'Tigo Money',
-    banco: 'Tigo Money Billetera',
-    cuenta: 'Línea: 78901234',
-    titular: 'FashionStore Retail',
-    color: '#EA580C',
-    badge: 'Billetera',
-  },
-];
+import { useAuth } from '../../../../users-security/shared/AuthContext';
+import { useTenant } from '../../../../../shared/context/TenantContext';
 
 interface QrPaymentViewProps {
   totalAmount: number;
@@ -67,23 +22,61 @@ interface QrPaymentViewProps {
 }
 
 export function QrPaymentView({ totalAmount, onQrScanned, isQrScanned }: QrPaymentViewProps) {
-  const [selectedAccountId, setSelectedAccountId] = useState<string>('yape');
-  const [displayMode, setDisplayMode] = useState<'cuenta' | 'subido'>('cuenta');
-  const [savedQrImage, setSavedQrImage] = useState<string | null>(null);
+  const { rol, isSuperAdmin } = useAuth();
+  const { tenantKey, currentTenant } = useTenant();
+
+  const rolName = (rol?.nombre || '').toLowerCase();
+  const canManageQr =
+    isSuperAdmin ||
+    rolName.includes('admin') ||
+    rolName.includes('gerente') ||
+    rolName.includes('encargad') ||
+    rolName.includes('cajer') ||
+    rolName.includes('vent');
+
+  const [companyQr, setCompanyQr] = useState<CompanyQrSettings | null>(null);
+  const [loadingQr, setLoadingQr] = useState<boolean>(true);
   const [isCameraOpen, setIsCameraOpen] = useState<boolean>(false);
+  const [isManageModalOpen, setIsManageModalOpen] = useState<boolean>(false);
   const [scannedCode, setScannedCode] = useState<string | null>(null);
   const [secondsLeft, setSecondsLeft] = useState<number>(300);
 
-  // Cargar imagen de QR guardada si existe
-  useEffect(() => {
-    AsyncStorage.getItem('dressly_saved_qr_image').then((val) => {
-      if (val) {
-        setSavedQrImage(val);
+  // Cargar configuración de QR oficial del servidor o almacenamiento offline
+  const fetchQrSettings = async () => {
+    try {
+      setLoadingQr(true);
+      const settings = await qrManagementService.getCompanyQrSettings(tenantKey);
+      setCompanyQr(settings);
+      // Guardar copia local en caso de desconexión
+      await AsyncStorage.setItem(`official_qr_${tenantKey}`, JSON.stringify(settings));
+    } catch {
+      // Intentar cargar de almacenamiento local offline
+      const cached = await AsyncStorage.getItem(`official_qr_${tenantKey}`);
+      if (cached) {
+        setCompanyQr(JSON.parse(cached));
+      } else {
+        // Fallback predeterminado elegante
+        setCompanyQr({
+          codigo_empresa: tenantKey,
+          nombre_comercial: currentTenant?.name || 'Dressly Fashion Store',
+          razon_social: `${currentTenant?.name || 'Fashion Store'} S.R.L.`,
+          nit: '1029384756',
+          qr_cuenta_banco: 'Banco Unión',
+          qr_numero_cuenta: '1000003928174',
+          qr_titular: `${currentTenant?.name || 'Fashion Store'} S.R.L.`,
+          qr_tipo_cobro: 'cuenta',
+        });
       }
-    }).catch(() => {});
-  }, []);
+    } finally {
+      setLoadingQr(false);
+    }
+  };
 
-  // Temporizador de vigencia
+  useEffect(() => {
+    fetchQrSettings();
+  }, [tenantKey]);
+
+  // Temporizador de vigencia del QR
   useEffect(() => {
     const timer = setInterval(() => {
       setSecondsLeft((prev) => (prev > 0 ? prev - 1 : 300));
@@ -97,9 +90,6 @@ export function QrPaymentView({ totalAmount, onQrScanned, isQrScanned }: QrPayme
     return `${m}:${s < 10 ? '0' : ''}${s}`;
   };
 
-  const selectedAccount =
-    BANK_QR_ACCOUNTS.find((a) => a.id === selectedAccountId) || BANK_QR_ACCOUNTS[0];
-
   const handleScanSuccess = (data: string) => {
     setScannedCode(data);
     setIsCameraOpen(false);
@@ -109,96 +99,89 @@ export function QrPaymentView({ totalAmount, onQrScanned, isQrScanned }: QrPayme
     Alert.alert('QR Escaneado', 'Código QR reconocido exitosamente. Ya puedes confirmar tu pago.');
   };
 
+  // Determinar la imagen o código del QR único
+  const getQrDisplayUri = () => {
+    if (companyQr?.qr_tipo_cobro === 'imagen' && companyQr?.qr_imagen_url) {
+      return companyQr.qr_imagen_url;
+    }
+    const banco = companyQr?.qr_cuenta_banco || 'Banco Unión';
+    const cta = companyQr?.qr_numero_cuenta || '1000003928174';
+    const titular = companyQr?.qr_titular || currentTenant?.name || 'FashionStore';
+    const dataString = `PAGO-QR|BANCO:${banco}|CTA:${cta}|TIT:${titular}|MONTO:${totalAmount.toFixed(2)}BS`;
+    return `https://api.qrserver.com/v1/create-qr-code/?size=350x350&data=${encodeURIComponent(dataString)}`;
+  };
+
+  const bancoOficial = companyQr?.qr_cuenta_banco || 'Banco Unión';
+  const cuentaOficial = companyQr?.qr_numero_cuenta || '1000003928174';
+  const titularOficial = companyQr?.qr_titular || companyQr?.nombre_comercial || 'FashionStore S.R.L.';
+  const nitOficial = companyQr?.qr_documento_titular || companyQr?.nit || '1029384756';
+
   return (
     <View style={styles.container}>
-      {/* Selector de Cuentas Bancarias */}
-      <Text style={styles.sectionLabel}>Selecciona la Cuenta o Banco:</Text>
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.accountTabs}
-      >
-        {BANK_QR_ACCOUNTS.map((acc) => (
+      {/* Barra de administración (solo para empleados/admin) */}
+      {canManageQr && (
+        <View style={styles.adminQrBar}>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.adminQrTitle}>⚙️ Gestión de QR Oficial</Text>
+            <Text style={styles.adminQrSub}>Configura o sube el QR único para tus clientes</Text>
+          </View>
           <TouchableOpacity
-            key={acc.id}
-            style={[
-              styles.accountTab,
-              selectedAccountId === acc.id && styles.accountTabActive,
-              { borderColor: acc.color },
-            ]}
-            onPress={() => setSelectedAccountId(acc.id)}
+            style={styles.adminQrBtn}
+            onPress={() => setIsManageModalOpen(true)}
+            activeOpacity={0.8}
           >
-            <View style={[styles.accountDot, { backgroundColor: acc.color }]} />
-            <Text
-              style={[
-                styles.accountTabText,
-                selectedAccountId === acc.id && styles.accountTabTextActive,
-              ]}
-            >
-              {acc.name}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </ScrollView>
-
-      {/* Switch: QR Cuenta vs Imagen Guardada */}
-      {savedQrImage && (
-        <View style={styles.modeSwitchBar}>
-          <TouchableOpacity
-            style={[styles.modeBtn, displayMode === 'cuenta' && styles.modeBtnActive]}
-            onPress={() => setDisplayMode('cuenta')}
-          >
-            <Text style={[styles.modeBtnText, displayMode === 'cuenta' && styles.modeBtnTextActive]}>
-              QR Dinámico de Cuenta
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.modeBtn, displayMode === 'subido' && styles.modeBtnActive]}
-            onPress={() => setDisplayMode('subido')}
-          >
-            <Text style={[styles.modeBtnText, displayMode === 'subido' && styles.modeBtnTextActive]}>
-              Imagen QR Oficial
-            </Text>
+            <Text style={styles.adminQrBtnText}>Subir / Editar QR</Text>
           </TouchableOpacity>
         </View>
       )}
 
-      {/* Tarjeta del Código QR */}
+      {/* Tarjeta Principal del Código QR Único */}
       <View style={styles.qrCard}>
-        {displayMode === 'subido' && savedQrImage ? (
-          <Image source={{ uri: savedQrImage }} style={styles.uploadedQrImage} resizeMode="contain" />
+        {/* Encabezado del QR */}
+        <View style={styles.qrHeaderTag}>
+          <Text style={styles.qrHeaderTagText}>🏁 CÓDIGO QR OFICIAL DE PAGO</Text>
+        </View>
+
+        {loadingQr ? (
+          <View style={styles.loaderBox}>
+            <ActivityIndicator size="large" color="#8C5E35" />
+            <Text style={styles.loaderText}>Obteniendo código QR de cobro...</Text>
+          </View>
         ) : (
-          <View style={styles.qrPlaceholder}>
-            <View style={[styles.qrHeaderTag, { backgroundColor: selectedAccount.color }]}>
-              <Text style={styles.qrHeaderTagText}>{selectedAccount.badge}</Text>
-            </View>
-            <Text style={styles.qrLargeIcon}>🏁</Text>
-            <Text style={styles.qrCodeText}>PAGO SIMPLE QR</Text>
-            <Text style={styles.qrAmountText}>{totalAmount.toFixed(2)} Bs</Text>
-            <Text style={styles.qrAccountText}>{selectedAccount.cuenta}</Text>
+          <View style={styles.qrWrapper}>
+            <Image
+              source={{ uri: getQrDisplayUri() }}
+              style={styles.qrImage}
+              resizeMode="contain"
+            />
           </View>
         )}
+
+        {/* Monto a Cobrar */}
+        <View style={styles.amountBadge}>
+          <Text style={styles.amountLabel}>Monto exacto a pagar:</Text>
+          <Text style={styles.amountValue}>{totalAmount.toFixed(2)} Bs</Text>
+        </View>
 
         {/* Tiempo de vigencia */}
         <View style={styles.timerBadge}>
           <Text style={styles.timerText}>⏳ Vigencia del QR: {formatTimer(secondsLeft)}</Text>
         </View>
 
-        {/* Datos de la cuenta seleccionada */}
+        {/* Datos Oficiales de la Cuenta Asociada al QR */}
         <View style={styles.accountInfoCard}>
-          <Text style={styles.infoBanco}>{selectedAccount.banco}</Text>
-          <Text style={styles.infoCuenta}>{selectedAccount.cuenta}</Text>
-          <Text style={styles.infoTitular}>Titular: {selectedAccount.titular}</Text>
+          <Text style={styles.infoBanco}>🏦 {bancoOficial}</Text>
+          <Text style={styles.infoCuenta}>N° de Cuenta: {cuentaOficial}</Text>
+          <Text style={styles.infoTitular}>Titular: {titularOficial}</Text>
+          <Text style={styles.infoNit}>NIT / CI: {nitOficial}</Text>
         </View>
 
         {/* Estado de Escaneo con Cámara */}
         {(isQrScanned || scannedCode) && (
           <View style={styles.scannedSuccessBanner}>
-            <Text style={styles.scannedSuccessText}>
-              ✓ Código QR Escaneado y Validado
-            </Text>
+            <Text style={styles.scannedSuccessText}>✓ Código QR Escaneado y Validado</Text>
             <Text style={styles.scannedCodeSub}>
-              {scannedCode || 'Transacción de cobro vinculada'}
+              {scannedCode || 'Transacción de cobro vinculada correctamente'}
             </Text>
           </View>
         )}
@@ -209,22 +192,23 @@ export function QrPaymentView({ totalAmount, onQrScanned, isQrScanned }: QrPayme
           onPress={() => setIsCameraOpen(true)}
           activeOpacity={0.85}
         >
-          <Text style={styles.btnScanCameraText}>
-            📷 Abrir Cámara para Escanear QR
-          </Text>
+          <Text style={styles.btnScanCameraText}>📷 Abrir Cámara para Escanear QR</Text>
         </TouchableOpacity>
 
-        {/* Instrucciones */}
+        {/* Instrucciones Clarificadoras para el Cliente */}
         <View style={styles.instructions}>
-          <Text style={styles.instructionsTitle}>Pasos para pagar:</Text>
+          <Text style={styles.instructionsTitle}>Pasos para completar tu compra:</Text>
           <Text style={styles.instructionStep}>
-            1. Abre tu app bancaria (Yape, BMSC, BNB, BCP, etc.).
+            1. Abre tu aplicación bancaria boliviana (BMSC, BNB, BCP, Banco Unión, Yape, etc.).
           </Text>
           <Text style={styles.instructionStep}>
-            2. Transfiere {totalAmount.toFixed(2)} Bs al QR o cuenta indicada.
+            2. Escanea el código QR único arriba o transfiere los {totalAmount.toFixed(2)} Bs.
           </Text>
           <Text style={styles.instructionStep}>
-            3. Puedes escanear tu comprobante con la cámara arriba y pulsar "Confirmar Pago".
+            3. Si deseas validar el comprobante con tu cámara, pulsa el botón "Abrir Cámara para Escanear QR".
+          </Text>
+          <Text style={styles.instructionStep}>
+            4. Presiona "Confirmar Pago" para emitir tu factura y registrar la venta.
           </Text>
         </View>
       </View>
@@ -234,6 +218,15 @@ export function QrPaymentView({ totalAmount, onQrScanned, isQrScanned }: QrPayme
         visible={isCameraOpen}
         onClose={() => setIsCameraOpen(false)}
         onScanSuccess={handleScanSuccess}
+      />
+
+      {/* Modal de Gestión y Subida de QR (Admin/Cajero) */}
+      <ManageQrConfigModal
+        visible={isManageModalOpen}
+        onClose={() => setIsManageModalOpen(false)}
+        currentSettings={companyQr}
+        tenantKey={tenantKey}
+        onUpdated={(newSettings) => setCompanyQr(newSettings)}
       />
     </View>
   );
@@ -245,221 +238,206 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     width: '100%',
   },
-  sectionLabel: {
-    alignSelf: 'flex-start',
-    fontSize: 12,
-    fontWeight: '700',
-    color: '#8C5E35',
-    textTransform: 'uppercase',
-    marginBottom: 8,
-  },
-  accountTabs: {
-    gap: 8,
-    paddingBottom: 10,
-  },
-  accountTab: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 7,
-    borderWidth: 1.5,
-  },
-  accountTabActive: {
-    backgroundColor: '#F8F5F1',
-  },
-  accountDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    marginRight: 6,
-  },
-  accountTabText: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: '#444',
-  },
-  accountTabTextActive: {
-    color: '#1C1510',
-  },
-  modeSwitchBar: {
-    flexDirection: 'row',
+  adminQrBar: {
     width: '100%',
-    backgroundColor: '#FAF8F5',
-    borderRadius: 10,
-    padding: 3,
-    marginBottom: 12,
-    borderWidth: 1,
-    borderColor: '#EFEBE6',
-  },
-  modeBtn: {
-    flex: 1,
-    paddingVertical: 7,
+    flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#FFF8F0',
+    borderWidth: 1,
+    borderColor: '#E6A265',
+    borderRadius: 14,
+    padding: 12,
+    marginBottom: 14,
+  },
+  adminQrTitle: {
+    fontSize: 13,
+    fontWeight: '800',
+    color: '#8C5E35',
+  },
+  adminQrSub: {
+    fontSize: 11,
+    color: '#6B7280',
+    marginTop: 2,
+  },
+  adminQrBtn: {
+    backgroundColor: '#8C5E35',
+    paddingVertical: 7,
+    paddingHorizontal: 12,
     borderRadius: 8,
   },
-  modeBtnActive: {
-    backgroundColor: '#8C5E35',
-  },
-  modeBtnText: {
-    fontSize: 11,
+  adminQrBtnText: {
+    color: '#fff',
+    fontSize: 12,
     fontWeight: '700',
-    color: '#666',
-  },
-  modeBtnTextActive: {
-    color: '#FFFFFF',
   },
   qrCard: {
-    width: '100%',
-    backgroundColor: '#FAF8F5',
-    borderRadius: 16,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: '#EFEBE6',
-    alignItems: 'center',
-  },
-  qrPlaceholder: {
-    width: 200,
-    height: 200,
     backgroundColor: '#FFFFFF',
-    borderRadius: 14,
-    borderWidth: 2,
-    borderColor: '#1C1510',
-    borderStyle: 'dashed',
-    justifyContent: 'center',
+    borderRadius: 20,
+    padding: 20,
     alignItems: 'center',
-    padding: 10,
-    marginBottom: 12,
-    position: 'relative',
+    width: '100%',
+    borderWidth: 1.5,
+    borderColor: '#EBDCCB',
+    shadowColor: '#8C5E35',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.12,
+    shadowRadius: 12,
+    elevation: 4,
   },
   qrHeaderTag: {
-    position: 'absolute',
-    top: 8,
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 6,
+    backgroundColor: '#8C5E35',
+    paddingVertical: 6,
+    paddingHorizontal: 16,
+    borderRadius: 20,
+    marginBottom: 16,
   },
   qrHeaderTagText: {
     color: '#FFFFFF',
-    fontSize: 10,
+    fontSize: 12,
     fontWeight: '800',
+    letterSpacing: 0.5,
   },
-  qrLargeIcon: {
-    fontSize: 40,
-    marginBottom: 4,
+  loaderBox: {
+    height: 230,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
-  qrCodeText: {
-    fontSize: 11,
-    fontWeight: '800',
-    color: '#1C1510',
+  loaderText: {
+    fontSize: 12,
+    color: '#6B7280',
+    marginTop: 10,
+    fontWeight: '600',
   },
-  qrAmountText: {
-    fontSize: 18,
+  qrWrapper: {
+    width: 220,
+    height: 220,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    padding: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    shadowColor: '#000',
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 2,
+    marginBottom: 14,
+  },
+  qrImage: {
+    width: '100%',
+    height: '100%',
+  },
+  amountBadge: {
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  amountLabel: {
+    fontSize: 12,
+    color: '#6B7280',
+    fontWeight: '600',
+  },
+  amountValue: {
+    fontSize: 24,
     fontWeight: '900',
     color: '#8C5E35',
     marginTop: 2,
   },
-  qrAccountText: {
-    fontSize: 9,
-    color: '#666',
-    marginTop: 4,
-    textAlign: 'center',
-  },
-  uploadedQrImage: {
-    width: 200,
-    height: 200,
-    borderRadius: 12,
-    marginBottom: 12,
-  },
   timerBadge: {
-    backgroundColor: '#F3EFEA',
-    paddingHorizontal: 12,
-    paddingVertical: 4,
+    backgroundColor: '#FEF3C7',
+    paddingVertical: 5,
+    paddingHorizontal: 14,
     borderRadius: 12,
-    marginBottom: 12,
+    marginBottom: 14,
   },
   timerText: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '700',
-    color: '#8C5E35',
+    color: '#92400E',
   },
   accountInfoCard: {
+    backgroundColor: '#F9FAFB',
+    borderRadius: 12,
+    padding: 14,
     width: '100%',
-    backgroundColor: '#FFFFFF',
-    borderRadius: 10,
-    padding: 10,
+    marginBottom: 14,
     borderWidth: 1,
-    borderColor: '#EFEBE6',
-    marginBottom: 12,
+    borderColor: '#E5E7EB',
   },
   infoBanco: {
-    fontSize: 12,
+    fontSize: 14,
     fontWeight: '800',
-    color: '#1C1510',
+    color: '#111827',
+    marginBottom: 4,
   },
   infoCuenta: {
-    fontSize: 11,
+    fontSize: 13,
     fontWeight: '700',
     color: '#8C5E35',
-    marginTop: 2,
+    marginBottom: 3,
   },
   infoTitular: {
+    fontSize: 12,
+    color: '#4B5563',
+    marginBottom: 2,
+  },
+  infoNit: {
     fontSize: 11,
-    color: '#666',
-    marginTop: 2,
+    color: '#6B7280',
   },
   scannedSuccessBanner: {
-    width: '100%',
-    backgroundColor: '#D1FAE5',
+    backgroundColor: '#ECFDF5',
+    borderColor: '#10B981',
+    borderWidth: 1,
     borderRadius: 10,
     padding: 10,
-    marginBottom: 12,
-    borderWidth: 1,
-    borderColor: '#A7F3D0',
+    width: '100%',
+    marginBottom: 14,
     alignItems: 'center',
   },
   scannedSuccessText: {
-    fontSize: 12,
-    fontWeight: '800',
     color: '#065F46',
+    fontWeight: '700',
+    fontSize: 13,
   },
   scannedCodeSub: {
-    fontSize: 10,
     color: '#047857',
+    fontSize: 11,
     marginTop: 2,
   },
   btnScanCamera: {
-    width: '100%',
-    backgroundColor: '#1C1510',
-    borderRadius: 12,
+    backgroundColor: '#1F2937',
     paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 12,
+    width: '100%',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: 14,
   },
   btnScanCameraText: {
     color: '#FFFFFF',
-    fontSize: 13,
-    fontWeight: '800',
+    fontWeight: '700',
+    fontSize: 14,
   },
   instructions: {
-    width: '100%',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#FAF7F2',
     borderRadius: 12,
     padding: 12,
-    borderWidth: 1,
-    borderColor: '#F0ECE8',
+    width: '100%',
+    borderLeftWidth: 4,
+    borderLeftColor: '#8C5E35',
   },
   instructionsTitle: {
     fontSize: 12,
-    fontWeight: '700',
-    color: '#1C1510',
+    fontWeight: '800',
+    color: '#8C5E35',
     marginBottom: 4,
   },
   instructionStep: {
     fontSize: 11,
-    color: '#6E6259',
+    color: '#555555',
     lineHeight: 16,
-    marginBottom: 2,
+    marginBottom: 3,
   },
 });

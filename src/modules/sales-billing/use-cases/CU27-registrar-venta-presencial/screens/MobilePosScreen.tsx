@@ -23,6 +23,9 @@ import type {
 } from '../types/pos.types';
 import { OfflineImage as Image } from '../../../../../services/offline/OfflineImage';
 import { CameraQrScannerModal } from '../../CU23-procesar-pago-electronico/components/CameraQrScannerModal';
+import { ManageQrConfigModal } from '../../CU23-procesar-pago-electronico/components/ManageQrConfigModal';
+import { qrManagementService, CompanyQrSettings } from '../../CU23-procesar-pago-electronico/services/qr-management.service';
+import { useTenant } from '../../../../../shared/context/TenantContext';
 
 export default function MobilePosScreen({ navigation }: any) {
   const [branches, setBranches] = useState<POSBranch[]>([]);
@@ -48,6 +51,15 @@ export default function MobilePosScreen({ navigation }: any) {
   const [paymentMethod, setPaymentMethod] = useState<'efectivo' | 'tarjeta' | 'qr'>('efectivo');
   const [cashReceived, setCashReceived] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Gestión de QR Oficial
+  const { tenantKey, currentTenant } = useTenant();
+  const [companyQr, setCompanyQr] = useState<CompanyQrSettings | null>(null);
+  const [isManageQrOpen, setIsManageQrOpen] = useState(false);
+
+  useEffect(() => {
+    qrManagementService.getCompanyQrSettings(tenantKey).then(setCompanyQr).catch(() => {});
+  }, [tenantKey]);
 
   // Recibo de Venta Exitosa
   const [saleReceipt, setSaleReceipt] = useState<PaymentConfirmationResult | null>(null);
@@ -543,10 +555,46 @@ export default function MobilePosScreen({ navigation }: any) {
 
                 {paymentMethod === 'qr' && (
                   <View style={styles.qrPromptBox}>
-                    <Text style={styles.qrPromptTitle}>Cobro con Código QR Dinámico</Text>
+                    <Text style={styles.qrPromptTitle}>Cobro con Código QR Oficial</Text>
                     <Text style={styles.qrPromptSub}>
-                      El cliente puede transferir {totalVenta.toFixed(2)} Bs mediante cualquier app bancaria con Simple QR.
+                      Muestra este QR al cliente para transferir {totalVenta.toFixed(2)} Bs directamente desde su banca móvil.
                     </Text>
+
+                    {/* QR Único Mostrado al Cliente */}
+                    <View style={styles.posQrDisplayWrapper}>
+                      <Image
+                        source={{
+                          uri:
+                            companyQr?.qr_tipo_cobro === 'imagen' && companyQr?.qr_imagen_url
+                              ? companyQr.qr_imagen_url
+                              : `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(
+                                  `PAGO-POS|BANCO:${companyQr?.qr_cuenta_banco || 'Banco Unión'}|CTA:${
+                                    companyQr?.qr_numero_cuenta || '1000003928174'
+                                  }|TIT:${
+                                    companyQr?.qr_titular || currentTenant?.name || 'FashionStore'
+                                  }|MONTO:${totalVenta.toFixed(2)}BS`
+                                )}`,
+                        }}
+                        style={styles.posQrImage}
+                        resizeMode="contain"
+                      />
+                    </View>
+
+                    <Text style={styles.posQrBankInfo}>
+                      🏦 {companyQr?.qr_cuenta_banco || 'Banco Unión'} • Cta: {companyQr?.qr_numero_cuenta || '1000003928174'}
+                    </Text>
+                    <Text style={styles.posQrTitularInfo}>
+                      Titular: {companyQr?.qr_titular || currentTenant?.name || 'FashionStore'}
+                    </Text>
+
+                    {/* Botón para Configurar o Subir QR desde el POS */}
+                    <TouchableOpacity
+                      style={styles.btnConfigPosQr}
+                      onPress={() => setIsManageQrOpen(true)}
+                      activeOpacity={0.8}
+                    >
+                      <Text style={styles.btnConfigPosQrText}>⚙️ Cambiar / Subir Imagen de QR</Text>
+                    </TouchableOpacity>
                   </View>
                 )}
 
@@ -647,6 +695,15 @@ export default function MobilePosScreen({ navigation }: any) {
           setIsScannerOpen(false);
           setSearchProduct(code);
         }}
+      />
+
+      {/* Modal para que Admin/Cajero configure y suba el QR */}
+      <ManageQrConfigModal
+        visible={isManageQrOpen}
+        onClose={() => setIsManageQrOpen(false)}
+        currentSettings={companyQr}
+        tenantKey={tenantKey}
+        onUpdated={(newSettings) => setCompanyQr(newSettings)}
       />
     </SafeAreaView>
   );
@@ -1082,20 +1139,64 @@ const styles = StyleSheet.create({
   },
   qrPromptBox: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 8,
-    padding: 10,
+    borderRadius: 12,
+    padding: 12,
     borderWidth: 1,
     borderColor: '#E8E3DC',
+    alignItems: 'center',
   },
   qrPromptTitle: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: '#1C1510',
+    fontSize: 13,
+    fontWeight: '800',
+    color: '#8C5E35',
   },
   qrPromptSub: {
     fontSize: 11,
-    color: '#777',
+    color: '#666',
     marginTop: 2,
+    textAlign: 'center',
+    marginBottom: 8,
+  },
+  posQrDisplayWrapper: {
+    width: 170,
+    height: 170,
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 8,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginVertical: 6,
+  },
+  posQrImage: {
+    width: '100%',
+    height: '100%',
+  },
+  posQrBankInfo: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#1F2937',
+    marginTop: 4,
+  },
+  posQrTitularInfo: {
+    fontSize: 11,
+    color: '#4B5563',
+    marginTop: 2,
+  },
+  btnConfigPosQr: {
+    backgroundColor: '#FAF7F2',
+    borderWidth: 1,
+    borderColor: '#8C5E35',
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    marginTop: 10,
+  },
+  btnConfigPosQrText: {
+    color: '#8C5E35',
+    fontSize: 11,
+    fontWeight: '700',
   },
   modalTotalBanner: {
     flexDirection: 'row',
